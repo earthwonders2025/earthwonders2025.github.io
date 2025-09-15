@@ -2,12 +2,76 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <title>Gallery Viewer</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="style.css">
-  <title>Document</title>
-</head>
+  <meta name="description" content="Explore stunning galleries and videos of Earth’s wonders. Dynamic navigation, immersive hero sections, and rotating motivational footer text.">
+  <meta name="keywords" content="Earth wonders, gallery, videos, travel, nature, photography, landscapes">
+  <meta name="author" content="EarthWonders">  
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="icon" id="faviconIcon" type="image/png" href="">
+<link rel="stylesheet" href="style.css">
 <body>
-  <h1>hello world</h1>
+    <!-- Navigation Bar -->
+<header class="site-header">
+  <nav class="main-nav">
+    
+        <div class="nav-logo">
+            <h5>EarthWonders</h5>
+        </div>
+    
+        <!-- CLS-safe wrapper -->
+        <div class="nav-links-wrapper" id="nav-links-wrapper">
+          <!-- The <ul> will be appended dynamically -->
+        </div>
+
+  
+
+    <div class="buttons-nav">
+      <button class="nav-arrow left" id="nav-left">&#10094;</button>
+      <button class="nav-arrow right" id="nav-right">&#10095;</button>
+    </div>
+  </nav>
+</header>
+
+
+
+
+    <div id="product-content"></div>
+
+ <!-- Image Modal -->
+    <div id="image-modal" class="image-modal">
+       
+            <div class="modal-button-div">
+                <button id="close-modal">X</button>
+                 <div class="modal-next-prev-div">
+
+            <button id="modal-prev">&#10094;</button>
+             <button id="modal-next">&#10095;</button>    
+        </div>
+                <div id="zoom-controls">
+                    <button id="zoom-in">+</button>
+                    <button id="zoom-out">-</button>
+                </div>
+                
+            </div>
+            <div class="modal-content">
+             
+            </div>
+            <div class="modal-footer">
+                
+                <h3 id="modal-heading"></h3>
+                <p id="modal-text"></p>
+                <span id="modal-caption"></span>
+            </div>
+
+        
+    </div>
+
+<!-- HTML placeholder for CLS-safe footer -->
+<footer id="footerid" class="footer-dark" >
+
+</footer>
+
   <script src="script.js"></script>
 </body>
 </html>
