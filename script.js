@@ -615,6 +615,7 @@ function openOverviewModal(productId) {
         // Close button
         overviewModal.querySelector('.close-overview').addEventListener('click', () => {
             overviewModal.classList.remove('show');
+            overviewModal.remove();
             openModals--;
             if (openModals <= 0) {
                 document.body.style.overflow = 'auto';
@@ -626,6 +627,7 @@ function openOverviewModal(productId) {
         overviewModal.addEventListener('click', (e) => {
             if (e.target === overviewModal) {
                 overviewModal.classList.remove('show');
+                overviewModal.remove();
                 openModals--;
                 if (openModals <= 0) {
                     document.body.style.overflow = 'auto';
