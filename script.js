@@ -464,7 +464,7 @@ function showCurrentVideo() {
     const videoData = currentGalleryItems[currentItemIndex]; 
     let iframe = modalContent.querySelector('iframe'); 
     if (!iframe) { iframe = document.createElement('iframe'); 
-        iframe.allow = 'autoplay; encrypted-media; fullscreen'; 
+        iframe.allow = 'autoplay; accelerometer; clipboard-write; encrypted-media; fullscreen; gyroscope; picture-in-picture'; 
         iframe.frameBorder = '0'; 
         iframe.style.width = '100%'; 
         iframe.style.height = '100%'; 
