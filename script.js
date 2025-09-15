@@ -527,6 +527,41 @@ function showCurrentVideo() {
             scale *= delta;
             img.style.transform = `scale(${scale}) translate(${offsetX/scale}px, ${offsetY/scale}px)`;
         }
+        function handleModalPinch(e) {
+    const img = document.getElementById('modal-img'); 
+    if (!img) return;
+
+    if (e.touches.length !== 2) return; // only care about 2-finger touches
+    e.preventDefault();
+
+    // calculate distance between two fingers
+    const dx = e.touches[0].clientX - e.touches[1].clientX;
+    const dy = e.touches[0].clientY - e.touches[1].clientY;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+
+    if (!img._lastDist) {
+        img._lastDist = dist;
+        return;
+    }
+
+    const delta = dist / img._lastDist; // >1 zoom in, <1 zoom out
+    scale *= delta;
+    img._lastDist = dist;
+
+    img.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
+}
+
+// reset when pinch ends
+function handlePinchEnd(e) {
+    if (e.touches.length < 2) {
+        const img = document.getElementById('modal-img');
+        if (img) img._lastDist = null;
+    }
+}
+
+// attach these like you attach wheel zoom
+modalContent.addEventListener("touchmove", handleModalPinch, { passive: false });
+modalContent.addEventListener("touchend", handlePinchEnd);
 
         /* ---------- PAGINATION ---------- */
         function renderPager(container, totalPages, currentPage, onChange) {
