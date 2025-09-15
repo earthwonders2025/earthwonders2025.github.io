@@ -14,14 +14,14 @@ async function loadFooterContent() {
 
   try {
     // Fetch Site Settings
-    const settingsRes = await fetch("http://127.0.0.1:8000/api/settings/", { mode: "cors" });
+    const settingsRes = await fetch("https://earthwonders2025.pythonanywhere.com/api/settings/", { mode: "cors" });
     if (!settingsRes.ok) throw new Error(`Settings API failed: ${settingsRes.status}`);
     const settingsData = await settingsRes.json();
     if (!settingsData.length) throw new Error("No site settings found");
     const settings = settingsData[0];
 
     // Fetch Footer Texts
-    const textsRes = await fetch("http://127.0.0.1:8000/api/footer-texts/", { mode: "cors" });
+    const textsRes = await fetch("https://earthwonders2025.pythonanywhere.com/api/footer-texts/", { mode: "cors" });
     if (!textsRes.ok) throw new Error(`Footer texts API failed: ${textsRes.status}`);
     const texts = await textsRes.json();
     if (!texts.length) throw new Error("No footer texts found");
@@ -78,7 +78,7 @@ let galleryData = []; // stores galleries fetched from API
 
 async function fetchGalleries() {
     try {
-        const response = await fetch("http://localhost:8000/api/galleries/");
+        const response = await fetch("https://earthwonders2025.pythonanywhere.com/api/galleries/");
         if (!response.ok) throw new Error("Failed to fetch galleries");
         const data = await response.json();
 
