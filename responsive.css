@@ -79,6 +79,10 @@ font-size: 15px !important;
 #modal-prev, #modal-next{
     font-size: 20px !important;
 }
+.pagination { 
+margin-bottom: 100px !important;
+}
+
 .pagination button{
     font-size: 15px !important;
 }
