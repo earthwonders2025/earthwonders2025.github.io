@@ -84,7 +84,7 @@ font-size: 15px !important;
 }
 .overview-pagination{
     position: absolute;
-    bottom: 70;
+    bottom: 70px;
     left: 0;
     right: 0;
 }
