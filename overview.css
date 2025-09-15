@@ -1,0 +1,406 @@
+/* OVERVIEW MODAL - SLIDE FROM BOTTOM */
+.overview-modal {
+  position: fixed;
+  bottom: -100%;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  background: #1a1a28;
+  z-index: 10000; /* Very high z-index to ensure it's on top */
+  box-shadow: 0 -5px 25px rgba(0, 0, 0, 0.5);
+  transition: bottom 0.5s ease-out;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.overview-modal.show {
+  bottom: 0;
+}
+
+.overview-header {
+  padding: 1.5rem;
+  background: #252538;
+  border-bottom: 1px solid #3a3a4a;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  /* border-top-left-radius: 20px;
+  border-top-right-radius: 20px; */
+}
+
+.overview-header h2 {
+  color: #ffb300;
+  margin: 0;
+  font-size: 1.8rem;
+}
+
+.close-overview {
+  background: #ffb300;
+  border: none;
+  color: #252538;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.3s;
+}
+
+.close-overview:hover {
+   background: #ff8c00;
+  color: white;
+}
+
+.overview-body {
+  flex: 1;
+  padding: 2rem;
+  overflow-y: auto;
+}
+
+.overview-body p {
+  font-size: 1.1rem;
+  line-height: 1.6;
+  color: #ccc;
+  margin-bottom: 1.5rem;
+}
+
+.overview-content {
+  display: none;
+}
+
+.overview-content.active {
+  display: block;
+}
+
+.overview-pagination {
+  display: flex;
+  justify-content: center;
+  padding: 1rem;
+  background: #252538;
+  border-top: 1px solid #3a3a4a;
+}
+
+.overview-pagination button {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+  padding: 0.5rem 1rem;
+  margin: 0 0.5rem;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.overview-pagination button:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.overview-pagination button.active {
+  background: rgba(255, 179, 0, 0.3);
+  border-color: #ffb300;
+}
+
+/* Images and Videos Grid */
+.images { 
+  display: grid; 
+  gap: 1rem; 
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  margin: 30px 0px; 
+}
+
+.images > div { 
+  position: relative; 
+  overflow: hidden;
+  border-radius: 0.5rem;
+}
+
+.images img { 
+  width: 100%; 
+  height:200px; 
+  object-fit: cover; 
+  transition: transform 0.3s; 
+  cursor: pointer; 
+}
+
+.images img:hover { 
+  transform: scale(1.08); 
+}
+
+.caption { 
+  text-align: center; 
+  font-size: 0.8rem; 
+  color: #aaa; 
+  margin-top: 0.3rem; 
+}
+
+/* Pagination */
+.pagination { 
+  display: flex; 
+  flex-wrap: wrap; 
+  justify-content: center; 
+  gap: 0.5rem; 
+  padding: 0.5rem 0; 
+}
+
+.pagination button { 
+  min-width: 40px; 
+  text-align: center; 
+  padding: 0.5rem 0.8rem; 
+  background-color: rgba(255, 255, 255, 0.1); 
+  border: 1px solid rgba(255, 255, 255, 0.3); 
+  border-radius: 0.5rem; 
+  color: #fff; 
+  font-weight: bold; 
+  cursor: pointer; 
+  transition: all 0.3s ease; 
+}
+
+.pagination button:hover { 
+  background-color: rgba(255, 255, 255, 0.2); 
+  transform: scale(1.05); 
+  color: #ffeb3b; 
+}
+
+.pagination button:disabled { 
+  background-color: rgba(0, 0, 0, 0.2); 
+  color: #777; 
+  cursor: not-allowed; 
+  border-color: rgba(0, 0, 0, 0.2); 
+}
+
+.pagination .active { 
+  background-color: rgba(255, 255, 255, 0.3); 
+  color: #ffeb3b; 
+  border: 1px solid #ffeb3b; 
+  box-shadow: 0 0 8px rgba(255, 235, 59, 0.5); 
+}
+
+
+/* IMAGE MODAL */
+.image-modal {
+  display: flex; 
+  flex-direction: column;
+  opacity: 0;
+  pointer-events: none;
+  position: fixed;
+  top: 0; 
+  left: 0;
+  width: 100%; 
+  height: 100%;
+  background: rgba(10, 10, 30, 0.0);
+  justify-content: center;
+  align-items: center;
+  z-index: 10001; /* Even higher than overview modals */
+  transition: background 0.3s ease, opacity 0.3s ease;
+  overflow-y: auto;  
+}
+
+/* Visible state */
+.image-modal.show {
+  opacity: 1;
+  pointer-events: auto;
+  background: rgba(10, 10, 30, 0.95);
+}
+
+/* Modal content animation */
+.modal-content {
+  background: #000;
+  margin: auto;
+  width: 90vw; 
+  max-width: 900px;
+  height: 80vh; 
+  max-height: 600px;
+  /* display: flex;
+  justify-content: center;
+  align-items: center; */
+  position: relative;
+  overflow: hidden;
+  transform: scale(0.9) translateY(30px);
+  opacity: 0;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+  border-radius: 10px;
+}
+
+.image-modal.show .modal-content {
+  transform: scale(1) translateY(0);
+  opacity: 1;
+}
+
+.modal-content img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  cursor: grab;
+  transition: transform 0.2s ease;
+  display: block;
+  margin: auto;
+  transform-origin: center center;
+}
+
+.modal-content iframe { 
+  width: 80vw; 
+  height: 45vw; 
+  max-width: 900px; 
+  max-height: 506px; 
+}
+
+.modal-button-div {
+  display: flex; 
+  justify-content: space-between; 
+  flex-direction: row-reverse; 
+  padding-bottom: 10px; 
+  margin: auto; 
+  width: 90vw; 
+  max-width: 900px; 
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+.modal-button-div button {
+  font-size: 18px; 
+  width: 40px;
+  height: 40px; 
+  background: rgb(34, 34, 34);
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#zoom-controls { 
+  z-index: 20; 
+  display: flex;
+  gap: 10px;
+}
+
+#zoom-controls button { 
+  margin: 0 0.3rem; 
+  cursor: pointer; 
+  border: none; 
+  background: #222; 
+  color: #fff; 
+  width: 40px;
+  height: 40px;
+  font-size: 18px;
+}
+
+#modal-prev, #modal-next {
+  /* position: fixed;
+  top: 50%; 
+  transform: translateY(-50%);   */
+  background: rgb(34, 34, 34);
+  border: none; 
+  color: #fff; 
+  font-size: 18px; 
+  padding: 0.5rem 1rem; 
+  cursor: pointer; 
+  border-radius: 0.3rem; 
+  width: 40px;
+  height: 40px;
+  /* z-index: 25;  */
+}
+
+/* #modal-prev { left: 10px; } 
+#modal-next { right: 10px; } */
+.modal-next-prev-div{
+  display: flex; 
+  gap: 30px;
+}
+
+.modal-footer {
+  width: 90vw; 
+  max-width: 900px; 
+  margin: 20px auto;
+  background: rgba(0, 0, 0, 0.6);
+  padding: 0.8rem 1rem;
+  color: #fff;
+  z-index: 30;
+  text-align: center;
+  box-sizing: border-box;
+  border-radius: 10px;
+  overflow-y: auto;
+}
+.modal-footer::-webkit-scrollbar {
+  width: 8px;
+}
+
+.modal-footer::-webkit-scrollbar-track {
+  background: #1a1a28;
+}
+
+.modal-footer::-webkit-scrollbar-thumb {
+  background: #ffb300;
+  border-radius: 4px;
+}
+
+.modal-footer::-webkit-scrollbar-thumb:hover {
+  background: #ff8c00;
+}
+
+.modal-footer h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #ffeb3b;
+}
+
+.modal-footer p {
+  margin: 0.3rem 0;
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+.modal-footer span {
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+
+
+/* Animation for modal */
+@keyframes shake {
+  0%   { transform: translateX(0); }
+  20%  { transform: translateX(-10px); }
+  40%  { transform: translateX(10px); }
+  60%  { transform: translateX(-10px); }
+  80%  { transform: translateX(10px); }
+  100% { transform: translateX(0); }
+}
+
+/* Scrollbar styling */
+.overview-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.overview-body::-webkit-scrollbar-track {
+  background: #1a1a28;
+}
+
+.overview-body::-webkit-scrollbar-thumb {
+  background: #ffb300;
+  border-radius: 4px;
+}
+
+.overview-body::-webkit-scrollbar-thumb:hover {
+  background: #ff8c00;
+}
+
+/* Scroll restoration animation */
+@keyframes smoothScroll {
+  0% { 
+    scroll-behavior: auto;
+    transform: translateY(var(--scroll-restore-offset, 0px)); 
+  }
+  100% { 
+    transform: translateY(0); 
+  }
+}
+
+body.smooth-restore {
+  animation: smoothScroll 0.7s ease-out;
+}
