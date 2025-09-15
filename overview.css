@@ -16,6 +16,7 @@
 
 .overview-modal.show {
   bottom: 0;
+   top: 0;
 }
 
 .overview-header {
