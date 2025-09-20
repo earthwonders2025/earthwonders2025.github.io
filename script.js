@@ -474,27 +474,108 @@ function showCurrentVideo() {
     modalCaption.textContent = videoData.caption || "";
 }
 
-        function enableDrag(img) {
-            img.onmousedown = (e) => {
-                isDragging = true;
-                startX = e.clientX - offsetX;
-                startY = e.clientY - offsetY;
-                img.style.cursor = 'grabbing';
-            };
-            
-            window.onmouseup = () => {
-                isDragging = false;
-                const m = document.getElementById('modal-img');
-                if (m) m.style.cursor = 'grab';
-            };
-            
-            window.onmousemove = (e) => {
-                if (!isDragging) return;
-                offsetX = e.clientX - startX;
-                offsetY = e.clientY - startY;
-                img.style.transform = `scale(${scale}) translate(${offsetX/scale}px, ${offsetY/scale}px)`;
-            };
+ function enableDrag(img) {
+    if (!img) return;
+
+    let isDragging = false;
+    let startX = 0, startY = 0;
+    let startOffsetX = 0, startOffsetY = 0;
+
+    img.style.cursor = 'grab';
+    img.style.transformOrigin = '0 0';
+
+    // -------------------------
+    // 🖱️ DESKTOP DRAG
+    // -------------------------
+    img.onmousedown = (e) => {
+        e.preventDefault();
+        isDragging = true;
+        startX = e.clientX;
+        startY = e.clientY;
+        startOffsetX = offsetX;
+        startOffsetY = offsetY;
+        img.style.cursor = 'grabbing';
+    };
+
+    window.onmouseup = () => {
+        isDragging = false;
+        img.style.cursor = 'grab';
+    };
+
+    window.onmousemove = (e) => {
+        if (!isDragging) return;
+
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+
+        offsetX = startOffsetX + dx;
+        offsetY = startOffsetY + dy;
+
+        updateTransform();
+    };
+
+    // -------------------------
+    // 📱 MOBILE TOUCH DRAG
+    // -------------------------
+    img.addEventListener("touchstart", (e) => {
+        if (e.touches.length === 1) {
+            // single finger → drag
+            isDragging = true;
+            startX = e.touches[0].clientX;
+            startY = e.touches[0].clientY;
+            startOffsetX = offsetX;
+            startOffsetY = offsetY;
         }
+    }, { passive: false });
+
+    img.addEventListener("touchmove", (e) => {
+        if (isDragging && e.touches.length === 1) {
+            e.preventDefault(); // stop page scrolling
+            const dx = e.touches[0].clientX - startX;
+            const dy = e.touches[0].clientY - startY;
+            offsetX = startOffsetX + dx;
+            offsetY = startOffsetY + dy;
+            updateTransform();
+        }
+    }, { passive: false });
+
+    img.addEventListener("touchend", () => {
+        isDragging = false;
+    });
+
+    // -------------------------
+    // 📱 DOUBLE TAP ZOOM
+    // -------------------------
+    let lastTap = 0;
+    img.addEventListener("touchend", (e) => {
+        const currentTime = new Date().getTime();
+        const tapLength = currentTime - lastTap;
+        if (tapLength < 300 && tapLength > 0) {
+            // Double tap detected
+            e.preventDefault();
+
+            const rect = img.getBoundingClientRect();
+            const cx = e.changedTouches[0].clientX - rect.left;
+            const cy = e.changedTouches[0].clientY - rect.top;
+
+            if (scale > 1) {
+                // reset zoom
+                scale = 1;
+                offsetX = 0;
+                offsetY = 0;
+            } else {
+                // zoom in centered at tap
+                scale = 2; // or 3 for stronger zoom
+                offsetX = cx - (cx - offsetX) * (scale / 1);
+                offsetY = cy - (cy - offsetY) * (scale / 1);
+            }
+            updateTransform();
+        }
+        lastTap = currentTime;
+    });
+}
+
+
 
         function navigateToPrevItem() {
             if (currentItemIndex > 0) {
