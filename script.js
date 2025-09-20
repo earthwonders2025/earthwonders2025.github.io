@@ -91,38 +91,133 @@ async function fetchGalleries() {
     }
 }
 
+// function renderGalleries(galleries) {
+//     const container = document.getElementById("product-content");
+//     container.innerHTML = "";
+
+//     if (galleries.length === 0) return;
+
+//     // 1️⃣ Keep the very first gallery fixed at the top
+//     const featuredGallery = galleries[0];
+//     const featuredHero = createHeroElement(featuredGallery);
+//     container.appendChild(featuredHero);
+
+//     // 2️⃣ Sort the rest so newest comes first
+
+
+// //  const rest = galleries.slice(1).sort((a, b) => new Date(a.created_at) - new Date(b.created_at)) // ASC by date
+// //  const rest = galleries.slice(1).sort((a, b) => new Date(b.created_at) - new Date(a.created_at))// des
+
+//     // const rest = galleries.slice(1).sort((a, b) => b.id - a.id); 
+//     const rest = galleries.slice(1).sort((a, b) => a.id - b.id);
+
+//     // If API has created_at, use:
+//     // const rest = galleries.slice(1).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+//     // 3️⃣ Render the rest under the featured
+//     rest.forEach(gallery => {
+//         const hero = createHeroElement(gallery);
+//         container.appendChild(hero);
+//     });
+
+//     setupParallaxEffect();
+// }
+
+// function createHeroElement(gallery) {
+//     const hero = document.createElement('div');
+//     hero.className = 'hero';
+//     hero.id = gallery.nav_title.toLowerCase().replace(/\s+/g, '-');
+
+//     hero.innerHTML = `
+//         <img class="parallax-image" src="${gallery.main_image_url}" alt="${gallery.title}">
+//         <div class="hero-text parallax-text">
+//             <h1>${gallery.title}</h1>
+//             <h2>${gallery.subtitle || ''}</h2>
+//             <button class="explore-more" data-id="${gallery.id}">Explore More</button>
+//         </div>
+//     `;
+
+//     hero.querySelector('.explore-more')
+//         .addEventListener('click', () => openOverviewModal(gallery.id));
+
+//     return hero;
+// }
+
+
+function updateMetaTags(gallery) {
+    if (!gallery) return;
+
+    // Update document title
+    document.title = `${gallery.title} | EarthWonders`;
+
+    // Update meta description
+    let metaDesc = document.querySelector("meta[name='description']");
+    if (!metaDesc) {
+        metaDesc = document.createElement('meta');
+        metaDesc.name = 'description';
+        document.head.appendChild(metaDesc);
+    }
+    metaDesc.content = gallery.subtitle || gallery.description || `Explore the gallery "${gallery.title}" on EarthWonders.`;
+
+    // Optional: update keywords
+    let metaKeywords = document.querySelector("meta[name='keywords']");
+    if (!metaKeywords) {
+        metaKeywords = document.createElement('meta');
+        metaKeywords.name = 'keywords';
+        document.head.appendChild(metaKeywords);
+    }
+    metaKeywords.content = gallery.title.split(' ').join(', ') + ', gallery, travel, nature, photography';
+}
+
+/**
+ * Adds JSON-LD structured data for each gallery
+ */
+function addGalleryStructuredData(gallery) {
+    if (!gallery) return;
+    const script = document.createElement('script');
+    script.type = 'application/ld+json';
+    script.textContent = JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "ImageGallery",
+        "name": gallery.title,
+        "description": gallery.subtitle || gallery.description || gallery.title,
+        "image": [gallery.main_image_url, ...(gallery.images || []).map(i => i.image_url)]
+    });
+    document.head.appendChild(script);
+}
+
+/**
+ * ---------- GALLERY RENDERING ----------
+ */
 function renderGalleries(galleries) {
     const container = document.getElementById("product-content");
     container.innerHTML = "";
 
     if (galleries.length === 0) return;
 
-    // 1️⃣ Keep the very first gallery fixed at the top
+    // Featured gallery
     const featuredGallery = galleries[0];
     const featuredHero = createHeroElement(featuredGallery);
     container.appendChild(featuredHero);
 
-    // 2️⃣ Sort the rest so newest comes first
+    // Update meta tags & structured data for SEO
+    updateMetaTags(featuredGallery);
+    addGalleryStructuredData(featuredGallery);
 
-
-//  const rest = galleries.slice(1).sort((a, b) => new Date(a.created_at) - new Date(b.created_at)) // ASC by date
-//  const rest = galleries.slice(1).sort((a, b) => new Date(b.created_at) - new Date(a.created_at))// des
-
-    // const rest = galleries.slice(1).sort((a, b) => b.id - a.id); 
+    // Render the rest
     const rest = galleries.slice(1).sort((a, b) => a.id - b.id);
-
-    // If API has created_at, use:
-    // const rest = galleries.slice(1).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-
-    // 3️⃣ Render the rest under the featured
     rest.forEach(gallery => {
         const hero = createHeroElement(gallery);
         container.appendChild(hero);
+        addGalleryStructuredData(gallery); // optional for all galleries
     });
 
     setupParallaxEffect();
 }
 
+/**
+ * Creates a hero section for a gallery
+ */
 function createHeroElement(gallery) {
     const hero = document.createElement('div');
     hero.className = 'hero';
@@ -141,6 +236,35 @@ function createHeroElement(gallery) {
         .addEventListener('click', () => openOverviewModal(gallery.id));
 
     return hero;
+}
+
+/**
+ * ---------- SCROLL HIGHLIGHT & META UPDATE ----------
+ */
+function setupScrollHighlight(navLinksEls) {
+    function highlightNav() {
+        const sections = document.querySelectorAll('.hero, footer');
+        let currentId = "";
+        sections.forEach(section => {
+            const rect = section.getBoundingClientRect();
+            if (rect.top <= window.innerHeight * 0.3 && rect.bottom >= window.innerHeight * 0.3) {
+                currentId = section.getAttribute("id");
+            }
+        });
+
+        navLinksEls.forEach(link => {
+            const isActive = link.getAttribute("href") === "#" + currentId;
+            link.classList.toggle("active", isActive);
+            if (isActive) link.scrollIntoView({ behavior: "smooth", inline: "center" });
+
+            // Update meta tags for currently active gallery
+            const activeGallery = galleryData.find(g => g.nav_title.toLowerCase().replace(/\s+/g,'-') === currentId);
+            if (activeGallery) updateMetaTags(activeGallery);
+        });
+    }
+
+    window.addEventListener("scroll", highlightNav, { passive: true });
+    highlightNav();
 }
 
 
