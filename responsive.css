@@ -15,6 +15,7 @@
   }
   .nav-links{
     z-index: 1 !important;
+    margin:auto !important;
   }
     .nav-links a{
       border-radius: 0 !important;
