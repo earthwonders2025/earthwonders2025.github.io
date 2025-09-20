@@ -79,11 +79,7 @@
   border-color:#ffa000;
   background:rgba(255,255,255,0.1);
 }
-.nav-links a:not(:hover) {
-  color:#bbb;
-  background:rgba(255,255,255,0.05);
-  border:1px solid rgba(255,255,255,0.1);
-} 
+
 .nav-links a.active{
   color:#fff;
   border-color:#ffa000;
