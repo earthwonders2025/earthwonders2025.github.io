@@ -1,3 +1,11 @@
+@media only screen and (min-device-width: 1024px){
+.nav-links a:hover{
+  color:#fff;
+  border-color:#ffa000;
+  background:rgba(255,255,255,0.1);
+}
+}
+
 @media only screen and (min-device-width: 1px) and (max-device-width: 768px){
     .main-nav{
     display: inline-block !important;
