@@ -40,6 +40,8 @@ async function loadFooterContent() {
     // ---------- FOOTER CONTENT ----------
     const footerContent = document.createElement("div");
     footerContent.classList.add("footer-content");
+    const navLogo = document.getElementById("navLogo");
+    navLogo.innerHTML = settings.nav_logo_text;
 
     const logo = document.createElement("img");
     logo.classList.add("footer-logo");
