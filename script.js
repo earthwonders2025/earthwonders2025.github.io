@@ -7,6 +7,19 @@ document.addEventListener('DOMContentLoaded', () => {
     setupParallaxEffect();
     // setupNavigation();
 });
+function updateMeta(title, description) {
+  document.title = title;
+
+  let descTag = document.querySelector('meta[name="description"]');
+  if (descTag) {
+    descTag.setAttribute("content", description);
+  } else {
+    descTag = document.createElement("meta");
+    descTag.name = "description";
+    descTag.content = description;
+    document.head.appendChild(descTag);
+  }
+}
 
 
 async function loadFooterContent() {
@@ -263,6 +276,10 @@ function setupScrollHighlight(navLinksEls) {
             const activeGallery = galleryData.find(g => g.nav_title.toLowerCase().replace(/\s+/g,'-') === currentId);
             if (activeGallery) updateMetaTags(activeGallery);
         });
+        updateMeta(
+          gallery.title + " – EarthWonders",
+          gallery.subtitle || "Explore this gallery on EarthWonders"
+);
     }
 
     window.addEventListener("scroll", highlightNav, { passive: true });
