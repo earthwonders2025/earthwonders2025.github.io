@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Earth Wonders – Stunning Galleries</title>
+  <title>EarthWonders – Stunning Galleries</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Explore stunning galleries and videos of Earth’s wonders. Dynamic navigation, immersive hero sections, and rotating motivational footer text.">
   <meta name="keywords" content="Earth wonders, gallery, videos, travel, nature, photography, landscapes">
@@ -11,76 +11,72 @@
 
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
   <link rel="stylesheet" href="style.css">
-  <script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "CollectionPage",
-  "name": "EarthWonders Galleries",
-  "description": "Explore nature galleries of mountains, oceans, and more.",
-  "hasPart": [
-    {
-      "@type": "ImageGallery",
-      "name": "Mountains Gallery",
-      "url": "https://earthwonders2025.github.io/#mountains"
-    },
-    {
-      "@type": "ImageGallery",
-      "name": "Oceans Gallery",
-      "url": "https://earthwonders2025.github.io/#oceans"
-    }
-  ]
-}
-</script>
-
 </head>
 <body>
-<header class="site-header">
-  <nav class="main-nav">
-    <div class="nav-logo">
-      <h5 id="navLogo">EarthWonders</h5>
+  <!-- Navigation Bar -->
+  <header class="site-header">
+    <nav class="main-nav">
+      <div class="nav-logo">
+        <h5 id="navLogo">EarthWonders</h5>
+      </div>
+
+      <!-- CLS-safe wrapper -->
+      <div class="nav-links-wrapper" id="nav-links-wrapper">
+        <!-- The <ul> will be appended dynamically -->
+      </div>
+
+      <div class="buttons-nav">
+        <button class="nav-arrow left" id="nav-left">&#10094;</button>
+        <button class="nav-arrow right" id="nav-right">&#10095;</button>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Dynamic Content -->
+  <div id="product-content"></div>
+
+  <!-- Image Modal -->
+  <div id="image-modal" class="image-modal">
+    <div class="modal-button-div">
+      <!-- Close button -->
+      <button id="close-modal">X</button>
+
+      <!-- Prev/Next controls -->
+      <div class="modal-next-prev-div">
+        <button id="modal-prev">&#10094;</button>
+        <button id="modal-next">&#10095;</button>
+      </div>
+
+      <!-- Zoom controls -->
+      <div id="zoom-controls">
+        <button id="zoom-in">+</button>
+        <button id="zoom-out">-</button>
+      </div>
     </div>
-    <div class="nav-links-wrapper" id="nav-links-wrapper"></div>
-    <div class="buttons-nav">
-      <button class="nav-arrow left" id="nav-left">&#10094;</button>
-      <button class="nav-arrow right" id="nav-right">&#10095;</button>
+
+    <!-- Image/Video will be injected here -->
+    <div class="modal-content"></div>
+
+    <!-- Modal footer -->
+    <div class="modal-footer">
+      <h3 id="modal-heading"></h3>
+      <p id="modal-text"></p>
+      <span id="modal-caption"></span>
     </div>
-  </nav>
-</header>
+  </div>
 
-<div id="product-content">
-  <!-- ⚡ Pre-rendered galleries for SEO -->
-  <section class="hero" id="mountains">
-    <img src="images/mountains.jpg" alt="Mountains Gallery">
-    <div class="hero-text">
-      <h1>Mountains Gallery</h1>
-      <h2>Experience the majestic peaks</h2>
-    </div>
-  </section>
+  <!-- Footer -->
+  <footer id="footerid" class="footer-dark"></footer>
 
-  <section class="hero" id="oceans">
-    <img src="images/oceans.jpg" alt="Oceans Gallery">
-    <div class="hero-text">
-      <h1>Oceans Gallery</h1>
-      <h2>Dive into the deep blue</h2>
-    </div>
-  </section>
-</div>
+  <!-- Noscript fallback -->
+  <noscript>
+    <p>Enable JavaScript to explore all galleries. Featured galleries:</p>
+    <ul>
+      <li>Mountains – Experience the majestic peaks</li>
+      <li>Oceans – Dive into the deep blue</li>
+    </ul>
+  </noscript>
 
-<!-- Modal -->
-<div id="image-modal" class="image-modal">
-  ...
-</div>
-
-<footer id="footerid" class="footer-dark"></footer>
-
-<noscript>
-  <p>Enable JavaScript to explore all galleries. Featured galleries:</p>
-  <ul>
-    <li>Mountains – Experience the majestic peaks</li>
-    <li>Oceans – Dive into the deep blue</li>
-  </ul>
-</noscript>
-
-<script src="script.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
