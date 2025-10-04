@@ -220,7 +220,7 @@ function renderGalleries(galleries) {
     addGalleryStructuredData(featuredGallery);
 
     // Render the rest
-    const rest = galleries.slice(1).sort((a, b) => a.id - b.id);
+    const rest = galleries.slice(1).sort((a, b) => b.id - a.id);
     rest.forEach(gallery => {
         const hero = createHeroElement(gallery);
         container.appendChild(hero);
@@ -339,7 +339,7 @@ function setupNavigation(galleries = []) {
     }
 
     // Add remaining galleries
-    const rest = galleries.slice(1).sort((a, b) => a.id - b.id);
+    const rest = galleries.slice(1).sort((a, b) => b.id - a.id);
     const fragment = document.createDocumentFragment();
     rest.forEach(gallery => {
         const li = document.createElement('li');
