@@ -1,4 +1,5 @@
 # earthwonders2025.github.io
+https://earthwonders2025.github.io/
 
 EarthWonders 2025 is an interactive educational web application that dynamically showcases natural and cosmic phenomena through galleries. The frontend is a Single Page Application (SPA) built with HTML, CSS, and JavaScript, hosted on GitHub Pages, while all content is served via a Django REST Framework (DRF) backend. Galleries, images, videos, site settings, and footer texts are delivered as JSON from the API, enabling the site to be fully data-driven and automatically updated whenever new content is added to the backend.
 
