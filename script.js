@@ -806,7 +806,7 @@ overviewModal.querySelector('.close-overview').addEventListener('click', () => {
             requestAnimationFrame(() => {
                 window.scrollTo({ top: scrollPosition, behavior: 'instant' });
             });
-        }, 100);
+        }, 300);
     }
 });
 
