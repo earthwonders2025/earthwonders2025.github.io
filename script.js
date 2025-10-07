@@ -793,15 +793,23 @@ function openOverviewModal(productId) {
         document.body.appendChild(overviewModal);
 
         // Close button
-        overviewModal.querySelector('.close-overview').addEventListener('click', () => {
-            overviewModal.classList.remove('show');
-            overviewModal.remove();
-            openModals--;
-            if (openModals <= 0) {
-                document.body.style.overflow = 'auto';
-                restoreScrollPosition();
-            }
-        });
+overviewModal.querySelector('.close-overview').addEventListener('click', () => {
+    overviewModal.classList.remove('show');
+    overviewModal.remove();
+    openModals--;
+
+    if (openModals <= 0) {
+        document.body.style.overflow = 'auto';
+
+        // 🧠 Delay to allow DOM reflow before restoring scroll
+        setTimeout(() => {
+            requestAnimationFrame(() => {
+                window.scrollTo({ top: scrollPosition, behavior: 'instant' });
+            });
+        }, 100);
+    }
+});
+
 
         // Close on clicking outside
         overviewModal.addEventListener('click', (e) => {
