@@ -766,30 +766,58 @@ function openOverviewModal(productId) {
         overviewModal = document.createElement('div');
         overviewModal.id = `overview-modal-${productId}`;
         overviewModal.className = 'overview-modal';
-        overviewModal.innerHTML = `
-            <div class="overview-header">
-                <h2>${product.description_title}</h2>
-                <button class="close-overview">×</button>
-            </div>
-            <div class="overview-body">
-                <div class="overview-content active" id="overview-text-${productId}">
-                    <p>${product.description_text}</p>
-                </div>
-                <div class="overview-content" id="overview-images-${productId}">
-                    <div class="images" id="overview-images-container-${productId}"></div>
-                    <div class="pagination" id="overview-images-pagination-${productId}"></div>
-                </div>
-                <div class="overview-content" id="overview-videos-${productId}">
-                    <div class="images" id="overview-videos-container-${productId}"></div>
-                    <div class="pagination" id="overview-videos-pagination-${productId}"></div>
-                </div>
-            </div>
-            <div class="overview-pagination">
-                <button class="active" data-target="overview-text-${productId}">Overview</button>
-                <button data-target="overview-images-${productId}">Images</button>
-                <button data-target="overview-videos-${productId}">Videos</button>
-            </div>
-        `;
+   let buttonsHTML = "";
+let bodyHTML = "";
+
+// ✅ Overview text (only if exists)
+if (product.description_text && product.description_text.trim() !== "") {
+    bodyHTML += `
+        <div class="overview-content active" id="overview-text-${productId}">
+            <p>${product.description_text}</p>
+        </div>
+    `;
+    buttonsHTML += `<button class="active" data-target="overview-text-${productId}">Overview</button>`;
+}
+
+// ✅ Images (only if images exist)
+if (product.images && product.images.length > 0) {
+    bodyHTML += `
+        <div class="overview-content" id="overview-images-${productId}">
+            <div class="images" id="overview-images-container-${productId}"></div>
+            <div class="pagination" id="overview-images-pagination-${productId}"></div>
+        </div>
+    `;
+    // Only active if no text
+    const activeClass = !buttonsHTML ? "active" : "";
+    buttonsHTML += `<button class="${activeClass}" data-target="overview-images-${productId}">Images</button>`;
+}
+
+// ✅ Videos (only if videos exist)
+if (product.videos && product.videos.length > 0) {
+    bodyHTML += `
+        <div class="overview-content" id="overview-videos-${productId}">
+            <div class="images" id="overview-videos-container-${productId}"></div>
+            <div class="pagination" id="overview-videos-pagination-${productId}"></div>
+        </div>
+    `;
+    const activeClass = !buttonsHTML ? "active" : "";
+    buttonsHTML += `<button class="${activeClass}" data-target="overview-videos-${productId}">Videos</button>`;
+}
+
+// ✅ Build modal dynamically
+overviewModal.innerHTML = `
+    <div class="overview-header">
+        <h2>${product.description_title || "Details"}</h2>
+        <button class="close-overview">×</button>
+    </div>
+    <div class="overview-body">
+        ${bodyHTML || "<p style='text-align:center;'>No details available.</p>"}
+    </div>
+    <div class="overview-pagination">
+        ${buttonsHTML}
+    </div>
+`;
+
         document.body.appendChild(overviewModal);
 
         // Close button
