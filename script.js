@@ -875,7 +875,7 @@ overviewModal.querySelector('.close-overview').addEventListener('click', () => {
 function renderOverviewImages(productId, images) {
     const container = document.getElementById(`overview-images-container-${productId}`);
     const paginationContainer = document.getElementById(`overview-images-pagination-${productId}`);
-    
+    if (!container) return; 
     let currentPage = 1;
     const totalPages = Math.ceil(images.length / IMAGES_PER_PAGE);
     
@@ -919,7 +919,7 @@ function renderOverviewImages(productId, images) {
 function renderOverviewVideos(productId, videos) {
     const container = document.getElementById(`overview-videos-container-${productId}`);
     const paginationContainer = document.getElementById(`overview-videos-pagination-${productId}`);
-    
+    if (!container) return;
     let currentPage = 1;
     const totalPages = Math.ceil(videos.length / VIDEOS_PER_PAGE);
     
