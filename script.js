@@ -99,24 +99,12 @@ async function fetchGalleries() {
 
         galleryData = data; // store globally
         renderGalleries(data);
-        // Handle direct link (deep linking)
-// const path = window.location.pathname.replace(/^\/|\/$/g, ""); // remove leading/trailing slashes
-// if (path) {
-//     const matchedGallery = data.find(g => 
-//         g.nav_title.toLowerCase().replace(/\s+/g, '-') === path
-//     );
-//     if (matchedGallery) {
-//         // Wait a moment to ensure DOM is ready
-//         setTimeout(() => openOverviewModal(matchedGallery.id), 500);
-//     }
-// }
         setupNavigation(data);
     } catch (error) {
         document.getElementById("product-content").innerHTML =
             `<p style="color:red;">${error.message}</p>`;
     }
 }
-
 
 // function renderGalleries(galleries) {
 //     const container = document.getElementById("product-content");
@@ -242,7 +230,6 @@ function renderGalleries(galleries) {
     setupParallaxEffect();
 }
 
-
 /**
  * Creates a hero section for a gallery
  */
@@ -260,16 +247,10 @@ function createHeroElement(gallery) {
         </div>
     `;
 
-    // hero.querySelector('.explore-more')
-    //     .addEventListener('click', () => openOverviewModal(gallery.id));
-
-    // return hero;
     hero.querySelector('.explore-more')
-  .addEventListener('click', () => {
-      const slug = gallery.nav_title.toLowerCase().replace(/\s+/g, '-');
-      history.pushState({ galleryId: gallery.id }, gallery.title, `/${slug}`);
-      openOverviewModal(gallery.id);
-  });
+        .addEventListener('click', () => openOverviewModal(gallery.id));
+
+    return hero;
 }
 
 /**
@@ -777,7 +758,7 @@ function openOverviewModal(productId) {
     saveScrollPosition();
     openModals++;
 
-    const product = galleryData.find(g => g.id === productId);
+    const product = galleryData.find(g => g.id === productId); // use find, not index
     if (!product) return;
 
     let overviewModal = document.getElementById(`overview-modal-${productId}`);
@@ -835,7 +816,9 @@ overviewModal.innerHTML = `
     <div class="overview-pagination">
         ${buttonsHTML}
     </div>
-`;        
+`;
+
+        document.body.appendChild(overviewModal);
 
         // Close button
 overviewModal.querySelector('.close-overview').addEventListener('click', () => {
@@ -853,9 +836,6 @@ overviewModal.querySelector('.close-overview').addEventListener('click', () => {
             });
         }, 300);
     }
-    if (history.state && history.state.galleryId) {
-    history.pushState({}, "", "/"); // go back to home URL
-}
 });
 
 
@@ -889,9 +869,7 @@ overviewModal.querySelector('.close-overview').addEventListener('click', () => {
 
     overviewModal.classList.add('show');
     document.body.style.overflow = 'hidden';
-    document.body.appendChild(overviewModal);
 }
-    ensureOverviewContainers(productId);
 
 // Images
 function renderOverviewImages(productId, images) {
@@ -942,7 +920,6 @@ function renderOverviewVideos(productId, videos) {
     const container = document.getElementById(`overview-videos-container-${productId}`);
     const paginationContainer = document.getElementById(`overview-videos-pagination-${productId}`);
     if (!container) return;
-    container.innerHTML = '';
     let currentPage = 1;
     const totalPages = Math.ceil(videos.length / VIDEOS_PER_PAGE);
     
@@ -977,19 +954,6 @@ function renderOverviewVideos(productId, videos) {
     }
     
     render();
-}
-function ensureOverviewContainers(productId) {
-  const modal = document.getElementById(`overview-modal-${productId}`);
-  if (!modal) return;
-
-  const sections = ['overview-text', 'overview-images', 'overview-videos'];
-  sections.forEach(id => {
-    if (!document.getElementById(`${id}-${productId}`)) {
-      const div = document.createElement('div');
-      div.id = `${id}-${productId}`;
-      modal.appendChild(div);
-    }
-  });
 }
 
 
