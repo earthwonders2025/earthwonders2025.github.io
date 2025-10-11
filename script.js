@@ -109,6 +109,15 @@ if (path.startsWith("/gallery/")) {
         openOverviewModal(gallery.id);
     }
 }
+        // 🔹 Handle direct link or refresh with #gallery=slug
+const hash = window.location.hash;
+if (hash.startsWith("#gallery=")) {
+    const slug = hash.replace("#gallery=", "");
+    const gallery = data.find(g => g.nav_title.toLowerCase().replace(/\s+/g, '') === slug);
+    if (gallery) {
+        openOverviewModal(gallery.id);
+    }
+}
     } catch (error) {
         document.getElementById("product-content").innerHTML =
             `<p style="color:red;">${error.message}</p>`;
@@ -270,17 +279,13 @@ function createHeroElement(gallery) {
 hero.querySelector('.explore-more')
     .addEventListener('click', (e) => {
         e.preventDefault();
-
-        // Create a slug from the nav_title
         const slug = gallery.nav_title.toLowerCase().replace(/\s+/g, '');
-        const newUrl = `${window.location.origin}/gallery/${slug}`;
-
-        // Update browser URL without reloading
-        window.history.pushState({ galleryId: gallery.id }, "", newUrl);
-
-        // Open the modal
+        
+        // Use hash-based routing — no server needed
+        window.location.hash = `gallery=${slug}`;
         openOverviewModal(gallery.id);
     });
+
     return hero;
 }
 
@@ -853,6 +858,7 @@ overviewModal.innerHTML = `
 
         // Close button
 overviewModal.querySelector('.close-overview').addEventListener('click', () => {
+    window.location.hash = ""; // remove #gallery=slug when closing
     overviewModal.classList.remove('show');
     overviewModal.remove();
     openModals--;
@@ -987,7 +993,21 @@ function renderOverviewVideos(productId, videos) {
     render();
 }
 
+window.addEventListener("hashchange", () => {
+    const hash = window.location.hash;
+    if (!hash || !hash.startsWith("#gallery=")) {
+        // Hash cleared → close modal
+        const openModal = document.querySelector(".overview-modal.show");
+        if (openModal) openModal.remove();
+        document.body.style.overflow = 'auto';
+        return;
+    }
 
+    // If hash changes to another gallery, open that one
+    const slug = hash.replace("#gallery=", "");
+    const gallery = galleryData.find(g => g.nav_title.toLowerCase().replace(/\s+/g, '') === slug);
+    if (gallery) openOverviewModal(gallery.id);
+});
 
     // 
     // 
