@@ -99,12 +99,24 @@ async function fetchGalleries() {
 
         galleryData = data; // store globally
         renderGalleries(data);
+        // Handle direct link (deep linking)
+const path = window.location.pathname.replace(/^\/|\/$/g, ""); // remove leading/trailing slashes
+if (path) {
+    const matchedGallery = data.find(g => 
+        g.nav_title.toLowerCase().replace(/\s+/g, '-') === path
+    );
+    if (matchedGallery) {
+        // Wait a moment to ensure DOM is ready
+        setTimeout(() => openOverviewModal(matchedGallery.id), 500);
+    }
+}
         setupNavigation(data);
     } catch (error) {
         document.getElementById("product-content").innerHTML =
             `<p style="color:red;">${error.message}</p>`;
     }
 }
+
 
 // function renderGalleries(galleries) {
 //     const container = document.getElementById("product-content");
@@ -230,6 +242,7 @@ function renderGalleries(galleries) {
     setupParallaxEffect();
 }
 
+
 /**
  * Creates a hero section for a gallery
  */
@@ -247,10 +260,16 @@ function createHeroElement(gallery) {
         </div>
     `;
 
-    hero.querySelector('.explore-more')
-        .addEventListener('click', () => openOverviewModal(gallery.id));
+    // hero.querySelector('.explore-more')
+    //     .addEventListener('click', () => openOverviewModal(gallery.id));
 
-    return hero;
+    // return hero;
+    hero.querySelector('.explore-more')
+  .addEventListener('click', () => {
+      const slug = gallery.nav_title.toLowerCase().replace(/\s+/g, '-');
+      history.pushState({ galleryId: gallery.id }, gallery.title, `/${slug}`);
+      openOverviewModal(gallery.id);
+  });
 }
 
 /**
@@ -836,6 +855,9 @@ overviewModal.querySelector('.close-overview').addEventListener('click', () => {
             });
         }, 300);
     }
+    if (history.state && history.state.galleryId) {
+    history.pushState({}, "", "/"); // go back to home URL
+}
 });
 
 
