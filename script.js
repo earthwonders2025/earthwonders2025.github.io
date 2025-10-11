@@ -775,11 +775,9 @@ modalContent.addEventListener("touchend", handlePinchEnd);
         /* ---------- OVERVIEW MODAL FUNCTIONS ---------- */
 function openOverviewModal(productId) {
     saveScrollPosition();
-    ensureOverviewContainers(productId);
-
     openModals++;
 
-    const product = galleryData.find(g => g.id === productId); // use find, not index
+    const product = galleryData.find(g => g.id === productId);
     if (!product) return;
 
     let overviewModal = document.getElementById(`overview-modal-${productId}`);
@@ -837,9 +835,7 @@ overviewModal.innerHTML = `
     <div class="overview-pagination">
         ${buttonsHTML}
     </div>
-`;
-
-        document.body.appendChild(overviewModal);
+`;        
 
         // Close button
 overviewModal.querySelector('.close-overview').addEventListener('click', () => {
@@ -893,7 +889,9 @@ overviewModal.querySelector('.close-overview').addEventListener('click', () => {
 
     overviewModal.classList.add('show');
     document.body.style.overflow = 'hidden';
+    document.body.appendChild(overviewModal);
 }
+    ensureOverviewContainers(productId);
 
 // Images
 function renderOverviewImages(productId, images) {
