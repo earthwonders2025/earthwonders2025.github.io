@@ -873,26 +873,17 @@ function openOverviewModal(productId) {
         overviewModal.className = 'overview-modal show';
 
         // 🧩 Modal HTML content
+// ✅ Build modal dynamically
 overviewModal.innerHTML = `
-    <div class="overview-modal-content">
-        <button class="close-overview">&times;</button>
-        <h2 class="overview-title">${product.title}</h2>
-        <div class="overview-pagination">
-            ${product.description_text ? `<button class="active" data-target="overview-${product.id}">Overview</button>` : ""}
-            ${product.images?.length ? `<button data-target="images-${product.id}">Images</button>` : ""}
-            ${product.videos?.length ? `<button data-target="videos-${product.id}">Videos</button>` : ""}
-        </div>
-        <div class="overview-sections">
-            ${product.description_text ? `<div id="overview-${product.id}" class="overview-content active"><p>${product.description_text}</p></div>` : ""}
-            ${product.images?.length ? `<div id="images-${product.id}" class="overview-content">
-                <div id="overview-images-container-${product.id}"></div>
-                <div id="overview-images-pagination-${product.id}"></div>
-            </div>` : ""}
-            ${product.videos?.length ? `<div id="videos-${product.id}" class="overview-content">
-                <div id="overview-videos-container-${product.id}"></div>
-                <div id="overview-videos-pagination-${product.id}"></div>
-            </div>` : ""}
-        </div>
+    <div class="overview-header">
+        <h2>${product.description_title || "Details"}</h2>
+        <button class="close-overview">×</button>
+    </div>
+    <div class="overview-body">
+        ${bodyHTML || "<p style='text-align:center;'>No details available.</p>"}
+    </div>
+    <div class="overview-pagination">
+        ${buttonsHTML}
     </div>
 `;
 
