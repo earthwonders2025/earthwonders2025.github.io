@@ -622,11 +622,22 @@ function setupParallaxEffect() {
             imageModal.classList.remove('show');
             openModals--;
             
-            if (openModals <= 0) {
-                document.body.style.overflow = 'auto';
-                restoreScrollPosition();
-                // enableParallax();
-            }
+          if (openModals <= 0) {
+    document.body.style.overflow = '';
+    document.body.style.touchAction = '';
+    document.body.style.pointerEvents = '';
+    document.documentElement.style.overflow = '';
+
+    // Remove hash without scrolling
+    try {
+        history.replaceState(null, "", window.location.pathname + window.location.search);
+    } catch {}
+
+    setTimeout(() => {
+        window.scrollTo({ top: scrollPosition || 0, left: 0, behavior: 'auto' });
+    }, 20);
+}
+
             
             setTimeout(() => {
                 const modalImg = document.getElementById('modal-img');
@@ -814,58 +825,37 @@ modalContent.addEventListener("touchend", handlePinchEnd);
         }
 
         /* ---------- OVERVIEW MODAL FUNCTIONS ---------- */// ---------- Helper: close overview modal (centralized) ----------
-function closeOverviewModal(overviewModal) {
-    // If passed an id or element, normalize to element
-    if (typeof overviewModal === 'string') overviewModal = document.getElementById(overviewModal);
-    if (!overviewModal) {
-        // fallback: find any visible overview modal
-        overviewModal = document.querySelector('.overview-modal.show');
-        if (!overviewModal) return;
-    }
+function closeOverviewModal(modal) {
+    if (typeof modal === 'string') modal = document.getElementById(modal);
+    if (!modal) return;
 
-    overviewModal.classList.remove('show');
+    modal.classList.remove('show');
 
-    // remove the node from DOM
-    overviewModal.remove();
-
+    // Remove modal from DOM
+    modal.remove();
     openModals = Math.max(0, openModals - 1);
 
-    // remove any leftover overlays/backdrops if you used them
-    const leftover = document.querySelectorAll('.modal-backdrop, .overview-modal.show');
-    leftover.forEach(el => {
-        if (!document.body.contains(el)) return;
-        // ensure removal
-        el.remove();
-    });
-
-    // Allow scrolling again when no modals are open
+    // Restore scroll and remove page-lock
     if (openModals <= 0) {
-        // clear any inline body overflow we set before
         document.body.style.overflow = '';
         document.body.style.touchAction = '';
         document.body.style.pointerEvents = '';
-
-        // Also clear html overflow as extra safety
         document.documentElement.style.overflow = '';
 
-        // Remove #gallery=... from URL without triggering a scroll jump
-        // Use replaceState to avoid creating history entry
+        // Remove hash from URL without scrolling
         try {
-            window.history.replaceState(null, "", window.location.pathname + window.location.search);
-        } catch (err) {
-            // fallback to clearing hash (less ideal, might jump in some browsers)
-            if (window.location.hash) window.location.hash = '';
+            history.replaceState(null, "", window.location.pathname + window.location.search);
+        } catch {
+            // fallback
         }
 
-        // Restore scroll position exactly as saved
-        // use 'auto' (supported) rather than 'instant'
+        // Restore previous scroll position
         setTimeout(() => {
             window.scrollTo({ top: scrollPosition || 0, left: 0, behavior: 'auto' });
-            // small visual restoration class if you like (your restoreScrollPosition also toggles a class)
-            document.body.classList.remove('smooth-restore');
         }, 20);
     }
 }
+
 
 // ---------- Tidy up openOverviewModal to use the helper ----------
 function openOverviewModal(productId) {
@@ -883,29 +873,29 @@ function openOverviewModal(productId) {
         overviewModal.className = 'overview-modal show';
 
         // 🧩 Modal HTML content
-        overviewModal.innerHTML = `
-            <div class="overview-modal-content">
-                <button class="close-overview">&times;</button>
+overviewModal.innerHTML = `
+    <div class="overview-modal-content">
+        <button class="close-overview">&times;</button>
+        <h2 class="overview-title">${product.title}</h2>
+        <div class="overview-pagination">
+            ${product.description_text ? `<button class="active" data-target="overview-${product.id}">Overview</button>` : ""}
+            ${product.images?.length ? `<button data-target="images-${product.id}">Images</button>` : ""}
+            ${product.videos?.length ? `<button data-target="videos-${product.id}">Videos</button>` : ""}
+        </div>
+        <div class="overview-sections">
+            ${product.description_text ? `<div id="overview-${product.id}" class="overview-content active"><p>${product.description_text}</p></div>` : ""}
+            ${product.images?.length ? `<div id="images-${product.id}" class="overview-content">
+                <div id="overview-images-container-${product.id}"></div>
+                <div id="overview-images-pagination-${product.id}"></div>
+            </div>` : ""}
+            ${product.videos?.length ? `<div id="videos-${product.id}" class="overview-content">
+                <div id="overview-videos-container-${product.id}"></div>
+                <div id="overview-videos-pagination-${product.id}"></div>
+            </div>` : ""}
+        </div>
+    </div>
+`;
 
-                <h2 class="overview-title">${product.title}</h2>
-
-                <div class="overview-pagination">
-                    <button class="active" data-target="overview-${product.id}">Overview</button>
-                    <button data-target="images-${product.id}">Images</button>
-                    <button data-target="videos-${product.id}">Videos</button>
-                </div>
-
-                <div class="overview-sections">
-                    <div id="overview-${product.id}" class="overview-content active">
-                        <p>${product.description || "No description available."}</p>
-                    </div>
-                    <div id="images-${product.id}" class="overview-content"></div>
-                    <div id="videos-${product.id}" class="overview-content"></div>
-                </div>
-            </div>
-        `;
-
-        document.body.appendChild(overviewModal);
 
         // 🔹 Close button
         overviewModal.querySelector('.close-overview')
