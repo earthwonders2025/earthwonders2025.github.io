@@ -775,7 +775,7 @@ modalContent.addEventListener("touchend", handlePinchEnd);
         /* ---------- OVERVIEW MODAL FUNCTIONS ---------- */
 function openOverviewModal(productId) {
     saveScrollPosition();
-    ensureOverviewContainers();
+    ensureOverviewContainers(productId);
 
     openModals++;
 
@@ -980,15 +980,15 @@ function renderOverviewVideos(productId, videos) {
     
     render();
 }
-function ensureOverviewContainers() {
-  const modal = document.getElementById('overview-modal');
+function ensureOverviewContainers(productId) {
+  const modal = document.getElementById(`overview-modal-${productId}`);
   if (!modal) return;
 
   const sections = ['overview-text', 'overview-images', 'overview-videos'];
   sections.forEach(id => {
-    if (!document.getElementById(id)) {
+    if (!document.getElementById(`${id}-${productId}`)) {
       const div = document.createElement('div');
-      div.id = id;
+      div.id = `${id}-${productId}`;
       modal.appendChild(div);
     }
   });
