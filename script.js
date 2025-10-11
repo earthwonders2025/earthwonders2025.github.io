@@ -109,53 +109,20 @@ if (path.startsWith("/gallery/")) {
         openOverviewModal(gallery.id);
     }
 }
-        // 🔹 Handle direct link or refresh with #gallery=slug
-const hash = window.location.hash;
-if (hash.startsWith("#gallery=")) {
-    const slug = hash.replace("#gallery=", "");
-    const gallery = data.find(g => g.nav_title.toLowerCase().replace(/\s+/g, '') === slug);
-    if (gallery) {
-        openOverviewModal(gallery.id);
-    }
-}
     } catch (error) {
         document.getElementById("product-content").innerHTML =
             `<p style="color:red;">${error.message}</p>`;
     }
 }
-// When hash or history state changes, keep UI in sync
-window.addEventListener('hashchange', () => {
-    const hash = window.location.hash || "";
-    if (!hash.startsWith('#gallery=')) {
-        // Hash cleared → close any open overview modal(s)
-        const openModal = document.querySelector('.overview-modal.show');
-        if (openModal) closeOverviewModal(openModal);
-        return;
-    }
-
-    // Hash points to a gallery -> open it
-    const slug = hash.replace('#gallery=', '');
-    const gallery = galleryData.find(g => g.nav_title.toLowerCase().replace(/\s+/g, '') === slug);
-    if (gallery) {
-        // If already open for another gallery, close it first
-        const openModal = document.querySelector('.overview-modal.show');
-        if (openModal && openModal.id !== `overview-modal-${gallery.id}`) closeOverviewModal(openModal);
-        openOverviewModal(gallery.id);
-    }
-});
-
-// handle popstate (back/forward)
-window.addEventListener('popstate', (event) => {
-    // If state has galleryId -> open it, else close modals
+window.addEventListener("popstate", (event) => {
     if (event.state && event.state.galleryId) {
-        const gallery = galleryData.find(g => g.id === event.state.galleryId);
-        if (gallery) openOverviewModal(gallery.id);
-        return;
+        openOverviewModal(event.state.galleryId);
+    } else {
+        // If user navigates back to home, close any open modals
+        const openModal = document.querySelector(".overview-modal.show");
+        if (openModal) openModal.remove();
+        document.body.style.overflow = 'auto';
     }
-
-    // No gallery state -> close existing modal(s)
-    const openModal = document.querySelector('.overview-modal.show');
-    if (openModal) closeOverviewModal(openModal);
 });
 
 
@@ -303,13 +270,17 @@ function createHeroElement(gallery) {
 hero.querySelector('.explore-more')
     .addEventListener('click', (e) => {
         e.preventDefault();
+
+        // Create a slug from the nav_title
         const slug = gallery.nav_title.toLowerCase().replace(/\s+/g, '');
-        
-        // Use hash-based routing — no server needed
-        window.location.hash = `gallery=${slug}`;
+        const newUrl = `${window.location.origin}/gallery/${slug}`;
+
+        // Update browser URL without reloading
+        window.history.pushState({ galleryId: gallery.id }, "", newUrl);
+
+        // Open the modal
         openOverviewModal(gallery.id);
     });
-
     return hero;
 }
 
@@ -622,22 +593,11 @@ function setupParallaxEffect() {
             imageModal.classList.remove('show');
             openModals--;
             
-          if (openModals <= 0) {
-    document.body.style.overflow = '';
-    document.body.style.touchAction = '';
-    document.body.style.pointerEvents = '';
-    document.documentElement.style.overflow = '';
-
-    // Remove hash without scrolling
-    try {
-        history.replaceState(null, "", window.location.pathname + window.location.search);
-    } catch {}
-
-    setTimeout(() => {
-        window.scrollTo({ top: scrollPosition || 0, left: 0, behavior: 'auto' });
-    }, 20);
-}
-
+            if (openModals <= 0) {
+                document.body.style.overflow = 'auto';
+                restoreScrollPosition();
+                // enableParallax();
+            }
             
             setTimeout(() => {
                 const modalImg = document.getElementById('modal-img');
@@ -824,55 +784,57 @@ modalContent.addEventListener("touchend", handlePinchEnd);
             container.appendChild(makeBtn('Last', totalPages, currentPage === totalPages));
         }
 
-        /* ---------- OVERVIEW MODAL FUNCTIONS ---------- */// ---------- Helper: close overview modal (centralized) ----------
-function closeOverviewModal(modal) {
-    if (typeof modal === 'string') modal = document.getElementById(modal);
-    if (!modal) return;
-
-    modal.classList.remove('show');
-
-    // Remove modal from DOM
-    modal.remove();
-    openModals = Math.max(0, openModals - 1);
-
-    // Restore scroll and remove page-lock
-    if (openModals <= 0) {
-        document.body.style.overflow = '';
-        document.body.style.touchAction = '';
-        document.body.style.pointerEvents = '';
-        document.documentElement.style.overflow = '';
-
-        // Remove hash from URL without scrolling
-        try {
-            history.replaceState(null, "", window.location.pathname + window.location.search);
-        } catch {
-            // fallback
-        }
-
-        // Restore previous scroll position
-        setTimeout(() => {
-            window.scrollTo({ top: scrollPosition || 0, left: 0, behavior: 'auto' });
-        }, 20);
-    }
-}
-
-
-// ---------- Tidy up openOverviewModal to use the helper ----------
+        /* ---------- OVERVIEW MODAL FUNCTIONS ---------- */
 function openOverviewModal(productId) {
     saveScrollPosition();
     openModals++;
 
-    const product = galleryData.find(g => g.id === productId);
+    const product = galleryData.find(g => g.id === productId); // use find, not index
     if (!product) return;
 
-    // If modal already exists, just show it
     let overviewModal = document.getElementById(`overview-modal-${productId}`);
     if (!overviewModal) {
         overviewModal = document.createElement('div');
         overviewModal.id = `overview-modal-${productId}`;
-        overviewModal.className = 'overview-modal show';
+        overviewModal.className = 'overview-modal';
+   let buttonsHTML = "";
+let bodyHTML = "";
 
-        // 🧩 Modal HTML content
+// ✅ Overview text (only if exists)
+if (product.description_text && product.description_text.trim() !== "") {
+    bodyHTML += `
+        <div class="overview-content active" id="overview-text-${productId}">
+            <p>${product.description_text}</p>
+        </div>
+    `;
+    buttonsHTML += `<button class="active" data-target="overview-text-${productId}">Overview</button>`;
+}
+
+// ✅ Images (only if images exist)
+if (product.images && product.images.length > 0) {
+    bodyHTML += `
+        <div class="overview-content" id="overview-images-${productId}">
+            <div class="images" id="overview-images-container-${productId}"></div>
+            <div class="pagination" id="overview-images-pagination-${productId}"></div>
+        </div>
+    `;
+    // Only active if no text
+    const activeClass = !buttonsHTML ? "active" : "";
+    buttonsHTML += `<button class="${activeClass}" data-target="overview-images-${productId}">Images</button>`;
+}
+
+// ✅ Videos (only if videos exist)
+if (product.videos && product.videos.length > 0) {
+    bodyHTML += `
+        <div class="overview-content" id="overview-videos-${productId}">
+            <div class="images" id="overview-videos-container-${productId}"></div>
+            <div class="pagination" id="overview-videos-pagination-${productId}"></div>
+        </div>
+    `;
+    const activeClass = !buttonsHTML ? "active" : "";
+    buttonsHTML += `<button class="${activeClass}" data-target="overview-videos-${productId}">Videos</button>`;
+}
+
 // ✅ Build modal dynamically
 overviewModal.innerHTML = `
     <div class="overview-header">
@@ -887,49 +849,58 @@ overviewModal.innerHTML = `
     </div>
 `;
 
+        document.body.appendChild(overviewModal);
 
-        // 🔹 Close button
-        overviewModal.querySelector('.close-overview')
-            .addEventListener('click', () => closeOverviewModal(overviewModal));
+        // Close button
+overviewModal.querySelector('.close-overview').addEventListener('click', () => {
+    overviewModal.classList.remove('show');
+    overviewModal.remove();
+    openModals--;
 
-        // 🔹 Close when clicking outside
+    if (openModals <= 0) {
+        document.body.style.overflow = 'auto';
+
+        // 🧠 Delay to allow DOM reflow before restoring scroll
+        setTimeout(() => {
+            requestAnimationFrame(() => {
+                window.scrollTo({ top: scrollPosition, behavior: 'instant' });
+            });
+        }, 300);
+    }
+});
+
+
+        // Close on clicking outside
         overviewModal.addEventListener('click', (e) => {
-            if (e.target === overviewModal) closeOverviewModal(overviewModal);
+            if (e.target === overviewModal) {
+                overviewModal.classList.remove('show');
+                overviewModal.remove();
+                openModals--;
+                if (openModals <= 0) {
+                    document.body.style.overflow = 'auto';
+                    restoreScrollPosition();
+                }
+            }
         });
 
-        // 🔹 Tab buttons
+        // Tab switching
         overviewModal.querySelectorAll('.overview-pagination button').forEach(button => {
             button.addEventListener('click', () => {
-                overviewModal.querySelectorAll('.overview-pagination button')
-                    .forEach(btn => btn.classList.remove('active'));
+                overviewModal.querySelectorAll('.overview-pagination button').forEach(btn => btn.classList.remove('active'));
                 button.classList.add('active');
-
-                overviewModal.querySelectorAll('.overview-content')
-                    .forEach(c => c.classList.remove('active'));
-                overviewModal.querySelector(`#${button.dataset.target}`).classList.add('active');
+                overviewModal.querySelectorAll('.overview-content').forEach(c => c.classList.remove('active'));
+                document.getElementById(button.dataset.target).classList.add('active');
             });
         });
 
-        // 🔹 Render media
+        // Render images/videos
         renderOverviewImages(productId, product.images || []);
         renderOverviewVideos(productId, product.videos || []);
     }
 
-    // Lock scrolling
+    overviewModal.classList.add('show');
     document.body.style.overflow = 'hidden';
-    document.body.style.touchAction = 'none';
-    document.body.style.pointerEvents = '';
-
-    // Update hash for shareable URL
-    const slug = product.nav_title.toLowerCase().replace(/\s+/g, '');
-    try {
-        window.history.replaceState({ galleryId: product.id }, "", window.location.pathname + window.location.search + `#gallery=${slug}`);
-    } catch {
-        window.location.hash = `gallery=${slug}`;
-    }
 }
-
-
 
 // Images
 function renderOverviewImages(productId, images) {
@@ -1015,6 +986,7 @@ function renderOverviewVideos(productId, videos) {
     
     render();
 }
+
 
 
     // 
