@@ -123,15 +123,39 @@ if (hash.startsWith("#gallery=")) {
             `<p style="color:red;">${error.message}</p>`;
     }
 }
-window.addEventListener("popstate", (event) => {
-    if (event.state && event.state.galleryId) {
-        openOverviewModal(event.state.galleryId);
-    } else {
-        // If user navigates back to home, close any open modals
-        const openModal = document.querySelector(".overview-modal.show");
-        if (openModal) openModal.remove();
-        document.body.style.overflow = 'auto';
+// When hash or history state changes, keep UI in sync
+window.addEventListener('hashchange', () => {
+    const hash = window.location.hash || "";
+    if (!hash.startsWith('#gallery=')) {
+        // Hash cleared → close any open overview modal(s)
+        const openModal = document.querySelector('.overview-modal.show');
+        if (openModal) closeOverviewModal(openModal);
+        return;
     }
+
+    // Hash points to a gallery -> open it
+    const slug = hash.replace('#gallery=', '');
+    const gallery = galleryData.find(g => g.nav_title.toLowerCase().replace(/\s+/g, '') === slug);
+    if (gallery) {
+        // If already open for another gallery, close it first
+        const openModal = document.querySelector('.overview-modal.show');
+        if (openModal && openModal.id !== `overview-modal-${gallery.id}`) closeOverviewModal(openModal);
+        openOverviewModal(gallery.id);
+    }
+});
+
+// handle popstate (back/forward)
+window.addEventListener('popstate', (event) => {
+    // If state has galleryId -> open it, else close modals
+    if (event.state && event.state.galleryId) {
+        const gallery = galleryData.find(g => g.id === event.state.galleryId);
+        if (gallery) openOverviewModal(gallery.id);
+        return;
+    }
+
+    // No gallery state -> close existing modal(s)
+    const openModal = document.querySelector('.overview-modal.show');
+    if (openModal) closeOverviewModal(openModal);
 });
 
 
@@ -789,105 +813,93 @@ modalContent.addEventListener("touchend", handlePinchEnd);
             container.appendChild(makeBtn('Last', totalPages, currentPage === totalPages));
         }
 
-        /* ---------- OVERVIEW MODAL FUNCTIONS ---------- */
+        /* ---------- OVERVIEW MODAL FUNCTIONS ---------- */// ---------- Helper: close overview modal (centralized) ----------
+function closeOverviewModal(overviewModal) {
+    // If passed an id or element, normalize to element
+    if (typeof overviewModal === 'string') overviewModal = document.getElementById(overviewModal);
+    if (!overviewModal) {
+        // fallback: find any visible overview modal
+        overviewModal = document.querySelector('.overview-modal.show');
+        if (!overviewModal) return;
+    }
+
+    overviewModal.classList.remove('show');
+
+    // remove the node from DOM
+    overviewModal.remove();
+
+    openModals = Math.max(0, openModals - 1);
+
+    // remove any leftover overlays/backdrops if you used them
+    const leftover = document.querySelectorAll('.modal-backdrop, .overview-modal.show');
+    leftover.forEach(el => {
+        if (!document.body.contains(el)) return;
+        // ensure removal
+        el.remove();
+    });
+
+    // Allow scrolling again when no modals are open
+    if (openModals <= 0) {
+        // clear any inline body overflow we set before
+        document.body.style.overflow = '';
+        document.body.style.touchAction = '';
+        document.body.style.pointerEvents = '';
+
+        // Also clear html overflow as extra safety
+        document.documentElement.style.overflow = '';
+
+        // Remove #gallery=... from URL without triggering a scroll jump
+        // Use replaceState to avoid creating history entry
+        try {
+            window.history.replaceState(null, "", window.location.pathname + window.location.search);
+        } catch (err) {
+            // fallback to clearing hash (less ideal, might jump in some browsers)
+            if (window.location.hash) window.location.hash = '';
+        }
+
+        // Restore scroll position exactly as saved
+        // use 'auto' (supported) rather than 'instant'
+        setTimeout(() => {
+            window.scrollTo({ top: scrollPosition || 0, left: 0, behavior: 'auto' });
+            // small visual restoration class if you like (your restoreScrollPosition also toggles a class)
+            document.body.classList.remove('smooth-restore');
+        }, 20);
+    }
+}
+
+// ---------- Tidy up openOverviewModal to use the helper ----------
 function openOverviewModal(productId) {
     saveScrollPosition();
     openModals++;
 
-    const product = galleryData.find(g => g.id === productId); // use find, not index
+    const product = galleryData.find(g => g.id === productId);
     if (!product) return;
 
     let overviewModal = document.getElementById(`overview-modal-${productId}`);
+
+    // create it if not present (your existing code)...
     if (!overviewModal) {
         overviewModal = document.createElement('div');
         overviewModal.id = `overview-modal-${productId}`;
         overviewModal.className = 'overview-modal';
-   let buttonsHTML = "";
-let bodyHTML = "";
-
-// ✅ Overview text (only if exists)
-if (product.description_text && product.description_text.trim() !== "") {
-    bodyHTML += `
-        <div class="overview-content active" id="overview-text-${productId}">
-            <p>${product.description_text}</p>
-        </div>
-    `;
-    buttonsHTML += `<button class="active" data-target="overview-text-${productId}">Overview</button>`;
-}
-
-// ✅ Images (only if images exist)
-if (product.images && product.images.length > 0) {
-    bodyHTML += `
-        <div class="overview-content" id="overview-images-${productId}">
-            <div class="images" id="overview-images-container-${productId}"></div>
-            <div class="pagination" id="overview-images-pagination-${productId}"></div>
-        </div>
-    `;
-    // Only active if no text
-    const activeClass = !buttonsHTML ? "active" : "";
-    buttonsHTML += `<button class="${activeClass}" data-target="overview-images-${productId}">Images</button>`;
-}
-
-// ✅ Videos (only if videos exist)
-if (product.videos && product.videos.length > 0) {
-    bodyHTML += `
-        <div class="overview-content" id="overview-videos-${productId}">
-            <div class="images" id="overview-videos-container-${productId}"></div>
-            <div class="pagination" id="overview-videos-pagination-${productId}"></div>
-        </div>
-    `;
-    const activeClass = !buttonsHTML ? "active" : "";
-    buttonsHTML += `<button class="${activeClass}" data-target="overview-videos-${productId}">Videos</button>`;
-}
-
-// ✅ Build modal dynamically
-overviewModal.innerHTML = `
-    <div class="overview-header">
-        <h2>${product.description_title || "Details"}</h2>
-        <button class="close-overview">×</button>
-    </div>
-    <div class="overview-body">
-        ${bodyHTML || "<p style='text-align:center;'>No details available.</p>"}
-    </div>
-    <div class="overview-pagination">
-        ${buttonsHTML}
-    </div>
-`;
-
+        // ... your building HTML here (keep as-is)
+        // after appending to body, attach listeners below (see after)
         document.body.appendChild(overviewModal);
 
-        // Close button
-overviewModal.querySelector('.close-overview').addEventListener('click', () => {
-    overviewModal.classList.remove('show');
-    overviewModal.remove();
-    openModals--;
+        // close button
+        const closeBtn = overviewModal.querySelector('.close-overview');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => closeOverviewModal(overviewModal));
+        }
 
-    if (openModals <= 0) {
-        document.body.style.overflow = 'auto';
-        // Remove #gallery=... without jumping to top
-        window.history.replaceState(null, "", window.location.pathname + window.location.search);
-        setTimeout(() => {
-            restoreScrollPosition(); // restore previous scroll position
-        }, 300);
-    }
-});
-
-
-
-        // Close on clicking outside
+        // close on outside click
         overviewModal.addEventListener('click', (e) => {
             if (e.target === overviewModal) {
-                overviewModal.classList.remove('show');
-                overviewModal.remove();
-                openModals--;
-                if (openModals <= 0) {
-                    document.body.style.overflow = 'auto';
-                    restoreScrollPosition();
-                }
+                closeOverviewModal(overviewModal);
             }
         });
 
-        // Tab switching
+        // tab switching, render images/videos etc - keep as you had
         overviewModal.querySelectorAll('.overview-pagination button').forEach(button => {
             button.addEventListener('click', () => {
                 overviewModal.querySelectorAll('.overview-pagination button').forEach(btn => btn.classList.remove('active'));
@@ -897,14 +909,27 @@ overviewModal.querySelector('.close-overview').addEventListener('click', () => {
             });
         });
 
-        // Render images/videos
         renderOverviewImages(productId, product.images || []);
         renderOverviewVideos(productId, product.videos || []);
     }
 
+    // show modal and lock scroll
     overviewModal.classList.add('show');
+    // Lock scroll via inline style (so we can revert it)
     document.body.style.overflow = 'hidden';
+    document.body.style.touchAction = 'none';   // prevents touch scroll on mobile
+    document.body.style.pointerEvents = '';     // allow clicks inside modal
+
+    // Ensure the URL hash/state references the gallery (shareable)
+    const slug = product.nav_title.toLowerCase().replace(/\s+/g, '');
+    // Use hash (safe) but also replace history to allow back-button behavior
+    try {
+        window.history.replaceState({ galleryId: product.id }, "", window.location.pathname + window.location.search + `#gallery=${slug}`);
+    } catch (err) {
+        window.location.hash = `gallery=${slug}`;
+    }
 }
+
 
 // Images
 function renderOverviewImages(productId, images) {
@@ -991,21 +1016,6 @@ function renderOverviewVideos(productId, videos) {
     render();
 }
 
-window.addEventListener("hashchange", () => {
-    const hash = window.location.hash;
-    if (!hash || !hash.startsWith("#gallery=")) {
-        // Hash cleared → close modal
-        const openModal = document.querySelector(".overview-modal.show");
-        if (openModal) openModal.remove();
-        document.body.style.overflow = 'auto';
-        return;
-    }
-
-    // If hash changes to another gallery, open that one
-    const slug = hash.replace("#gallery=", "");
-    const gallery = galleryData.find(g => g.nav_title.toLowerCase().replace(/\s+/g, '') === slug);
-    if (gallery) openOverviewModal(gallery.id);
-});
 
     // 
     // 
