@@ -100,40 +100,11 @@ async function fetchGalleries() {
         galleryData = data; // store globally
         renderGalleries(data);
         setupNavigation(data);
-        // 🔹 Check URL on load for direct modal access
-const path = window.location.pathname;
-if (path.startsWith("/gallery/")) {
-    const slug = path.split("/gallery/")[1];
-    const gallery = data.find(g => g.nav_title.toLowerCase().replace(/\s+/g, '') === slug);
-    if (gallery) {
-        openOverviewModal(gallery.id);
-    }
-}
-        // 🔹 Handle direct link or refresh with #gallery=slug
-const hash = window.location.hash;
-if (hash.startsWith("#gallery=")) {
-    const slug = hash.replace("#gallery=", "");
-    const gallery = data.find(g => g.nav_title.toLowerCase().replace(/\s+/g, '') === slug);
-    if (gallery) {
-        openOverviewModal(gallery.id);
-    }
-}
     } catch (error) {
         document.getElementById("product-content").innerHTML =
             `<p style="color:red;">${error.message}</p>`;
     }
 }
-window.addEventListener("popstate", (event) => {
-    if (event.state && event.state.galleryId) {
-        openOverviewModal(event.state.galleryId);
-    } else {
-        // If user navigates back to home, close any open modals
-        const openModal = document.querySelector(".overview-modal.show");
-        if (openModal) openModal.remove();
-        document.body.style.overflow = 'auto';
-    }
-});
-
 
 // function renderGalleries(galleries) {
 //     const container = document.getElementById("product-content");
@@ -276,15 +247,8 @@ function createHeroElement(gallery) {
         </div>
     `;
 
-hero.querySelector('.explore-more')
-    .addEventListener('click', (e) => {
-        e.preventDefault();
-        const slug = gallery.nav_title.toLowerCase().replace(/\s+/g, '');
-        
-        // Use hash-based routing — no server needed
-        window.location.hash = `gallery=${slug}`;
-        openOverviewModal(gallery.id);
-    });
+    hero.querySelector('.explore-more')
+        .addEventListener('click', () => openOverviewModal(gallery.id));
 
     return hero;
 }
@@ -864,14 +828,15 @@ overviewModal.querySelector('.close-overview').addEventListener('click', () => {
 
     if (openModals <= 0) {
         document.body.style.overflow = 'auto';
-        // Remove #gallery=... without jumping to top
-        window.history.replaceState(null, "", window.location.pathname + window.location.search);
+
+        // 🧠 Delay to allow DOM reflow before restoring scroll
         setTimeout(() => {
-            restoreScrollPosition(); // restore previous scroll position
+            requestAnimationFrame(() => {
+                window.scrollTo({ top: scrollPosition, behavior: 'instant' });
+            });
         }, 300);
     }
 });
-
 
 
         // Close on clicking outside
@@ -991,21 +956,7 @@ function renderOverviewVideos(productId, videos) {
     render();
 }
 
-window.addEventListener("hashchange", () => {
-    const hash = window.location.hash;
-    if (!hash || !hash.startsWith("#gallery=")) {
-        // Hash cleared → close modal
-        const openModal = document.querySelector(".overview-modal.show");
-        if (openModal) openModal.remove();
-        document.body.style.overflow = 'auto';
-        return;
-    }
 
-    // If hash changes to another gallery, open that one
-    const slug = hash.replace("#gallery=", "");
-    const gallery = galleryData.find(g => g.nav_title.toLowerCase().replace(/\s+/g, '') === slug);
-    if (gallery) openOverviewModal(gallery.id);
-});
 
     // 
     // 
