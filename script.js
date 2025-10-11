@@ -775,6 +775,8 @@ modalContent.addEventListener("touchend", handlePinchEnd);
         /* ---------- OVERVIEW MODAL FUNCTIONS ---------- */
 function openOverviewModal(productId) {
     saveScrollPosition();
+    ensureOverviewContainers();
+
     openModals++;
 
     const product = galleryData.find(g => g.id === productId); // use find, not index
@@ -942,6 +944,7 @@ function renderOverviewVideos(productId, videos) {
     const container = document.getElementById(`overview-videos-container-${productId}`);
     const paginationContainer = document.getElementById(`overview-videos-pagination-${productId}`);
     if (!container) return;
+    container.innerHTML = '';
     let currentPage = 1;
     const totalPages = Math.ceil(videos.length / VIDEOS_PER_PAGE);
     
@@ -977,7 +980,19 @@ function renderOverviewVideos(productId, videos) {
     
     render();
 }
+function ensureOverviewContainers() {
+  const modal = document.getElementById('overview-modal');
+  if (!modal) return;
 
+  const sections = ['overview-text', 'overview-images', 'overview-videos'];
+  sections.forEach(id => {
+    if (!document.getElementById(id)) {
+      const div = document.createElement('div');
+      div.id = id;
+      modal.appendChild(div);
+    }
+  });
+}
 
 
     // 
