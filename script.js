@@ -858,22 +858,20 @@ overviewModal.innerHTML = `
 
         // Close button
 overviewModal.querySelector('.close-overview').addEventListener('click', () => {
-    window.location.hash = ""; // remove #gallery=slug when closing
     overviewModal.classList.remove('show');
     overviewModal.remove();
     openModals--;
 
     if (openModals <= 0) {
         document.body.style.overflow = 'auto';
-
-        // 🧠 Delay to allow DOM reflow before restoring scroll
+        // Remove #gallery=... without jumping to top
+        window.history.replaceState(null, "", window.location.pathname + window.location.search);
         setTimeout(() => {
-            requestAnimationFrame(() => {
-                window.scrollTo({ top: scrollPosition, behavior: 'instant' });
-            });
+            restoreScrollPosition(); // restore previous scroll position
         }, 300);
     }
 });
+
 
 
         // Close on clicking outside
