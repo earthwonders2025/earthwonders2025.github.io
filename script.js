@@ -100,11 +100,31 @@ async function fetchGalleries() {
         galleryData = data; // store globally
         renderGalleries(data);
         setupNavigation(data);
+        // 🔹 Check URL on load for direct modal access
+const path = window.location.pathname;
+if (path.startsWith("/gallery/")) {
+    const slug = path.split("/gallery/")[1];
+    const gallery = data.find(g => g.nav_title.toLowerCase().replace(/\s+/g, '') === slug);
+    if (gallery) {
+        openOverviewModal(gallery.id);
+    }
+}
     } catch (error) {
         document.getElementById("product-content").innerHTML =
             `<p style="color:red;">${error.message}</p>`;
     }
 }
+window.addEventListener("popstate", (event) => {
+    if (event.state && event.state.galleryId) {
+        openOverviewModal(event.state.galleryId);
+    } else {
+        // If user navigates back to home, close any open modals
+        const openModal = document.querySelector(".overview-modal.show");
+        if (openModal) openModal.remove();
+        document.body.style.overflow = 'auto';
+    }
+});
+
 
 // function renderGalleries(galleries) {
 //     const container = document.getElementById("product-content");
@@ -247,9 +267,20 @@ function createHeroElement(gallery) {
         </div>
     `;
 
-    hero.querySelector('.explore-more')
-        .addEventListener('click', () => openOverviewModal(gallery.id));
+hero.querySelector('.explore-more')
+    .addEventListener('click', (e) => {
+        e.preventDefault();
 
+        // Create a slug from the nav_title
+        const slug = gallery.nav_title.toLowerCase().replace(/\s+/g, '');
+        const newUrl = `${window.location.origin}/gallery/${slug}`;
+
+        // Update browser URL without reloading
+        window.history.pushState({ galleryId: gallery.id }, "", newUrl);
+
+        // Open the modal
+        openOverviewModal(gallery.id);
+    });
     return hero;
 }
 
