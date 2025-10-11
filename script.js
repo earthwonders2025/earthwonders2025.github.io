@@ -100,16 +100,16 @@ async function fetchGalleries() {
         galleryData = data; // store globally
         renderGalleries(data);
         // Handle direct link (deep linking)
-const path = window.location.pathname.replace(/^\/|\/$/g, ""); // remove leading/trailing slashes
-if (path) {
-    const matchedGallery = data.find(g => 
-        g.nav_title.toLowerCase().replace(/\s+/g, '-') === path
-    );
-    if (matchedGallery) {
-        // Wait a moment to ensure DOM is ready
-        setTimeout(() => openOverviewModal(matchedGallery.id), 500);
-    }
-}
+// const path = window.location.pathname.replace(/^\/|\/$/g, ""); // remove leading/trailing slashes
+// if (path) {
+//     const matchedGallery = data.find(g => 
+//         g.nav_title.toLowerCase().replace(/\s+/g, '-') === path
+//     );
+//     if (matchedGallery) {
+//         // Wait a moment to ensure DOM is ready
+//         setTimeout(() => openOverviewModal(matchedGallery.id), 500);
+//     }
+// }
         setupNavigation(data);
     } catch (error) {
         document.getElementById("product-content").innerHTML =
