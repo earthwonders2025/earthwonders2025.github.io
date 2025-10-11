@@ -875,60 +875,79 @@ function openOverviewModal(productId) {
     const product = galleryData.find(g => g.id === productId);
     if (!product) return;
 
+    // If modal already exists, just show it
     let overviewModal = document.getElementById(`overview-modal-${productId}`);
-
-    // create it if not present (your existing code)...
     if (!overviewModal) {
         overviewModal = document.createElement('div');
         overviewModal.id = `overview-modal-${productId}`;
-        overviewModal.className = 'overview-modal';
-        // ... your building HTML here (keep as-is)
-        // after appending to body, attach listeners below (see after)
+        overviewModal.className = 'overview-modal show';
+
+        // 🧩 Modal HTML content
+        overviewModal.innerHTML = `
+            <div class="overview-modal-content">
+                <button class="close-overview">&times;</button>
+
+                <h2 class="overview-title">${product.title}</h2>
+
+                <div class="overview-pagination">
+                    <button class="active" data-target="overview-${product.id}">Overview</button>
+                    <button data-target="images-${product.id}">Images</button>
+                    <button data-target="videos-${product.id}">Videos</button>
+                </div>
+
+                <div class="overview-sections">
+                    <div id="overview-${product.id}" class="overview-content active">
+                        <p>${product.description || "No description available."}</p>
+                    </div>
+                    <div id="images-${product.id}" class="overview-content"></div>
+                    <div id="videos-${product.id}" class="overview-content"></div>
+                </div>
+            </div>
+        `;
+
         document.body.appendChild(overviewModal);
 
-        // close button
-        const closeBtn = overviewModal.querySelector('.close-overview');
-        if (closeBtn) {
-            closeBtn.addEventListener('click', () => closeOverviewModal(overviewModal));
-        }
+        // 🔹 Close button
+        overviewModal.querySelector('.close-overview')
+            .addEventListener('click', () => closeOverviewModal(overviewModal));
 
-        // close on outside click
+        // 🔹 Close when clicking outside
         overviewModal.addEventListener('click', (e) => {
-            if (e.target === overviewModal) {
-                closeOverviewModal(overviewModal);
-            }
+            if (e.target === overviewModal) closeOverviewModal(overviewModal);
         });
 
-        // tab switching, render images/videos etc - keep as you had
+        // 🔹 Tab buttons
         overviewModal.querySelectorAll('.overview-pagination button').forEach(button => {
             button.addEventListener('click', () => {
-                overviewModal.querySelectorAll('.overview-pagination button').forEach(btn => btn.classList.remove('active'));
+                overviewModal.querySelectorAll('.overview-pagination button')
+                    .forEach(btn => btn.classList.remove('active'));
                 button.classList.add('active');
-                overviewModal.querySelectorAll('.overview-content').forEach(c => c.classList.remove('active'));
-                document.getElementById(button.dataset.target).classList.add('active');
+
+                overviewModal.querySelectorAll('.overview-content')
+                    .forEach(c => c.classList.remove('active'));
+                overviewModal.querySelector(`#${button.dataset.target}`).classList.add('active');
             });
         });
 
+        // 🔹 Render media
         renderOverviewImages(productId, product.images || []);
         renderOverviewVideos(productId, product.videos || []);
     }
 
-    // show modal and lock scroll
-    overviewModal.classList.add('show');
-    // Lock scroll via inline style (so we can revert it)
+    // Lock scrolling
     document.body.style.overflow = 'hidden';
-    document.body.style.touchAction = 'none';   // prevents touch scroll on mobile
-    document.body.style.pointerEvents = '';     // allow clicks inside modal
+    document.body.style.touchAction = 'none';
+    document.body.style.pointerEvents = '';
 
-    // Ensure the URL hash/state references the gallery (shareable)
+    // Update hash for shareable URL
     const slug = product.nav_title.toLowerCase().replace(/\s+/g, '');
-    // Use hash (safe) but also replace history to allow back-button behavior
     try {
         window.history.replaceState({ galleryId: product.id }, "", window.location.pathname + window.location.search + `#gallery=${slug}`);
-    } catch (err) {
+    } catch {
         window.location.hash = `gallery=${slug}`;
     }
 }
+
 
 
 // Images
