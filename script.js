@@ -669,10 +669,10 @@ function showCurrentVideo() {
 
 function updateMediaURL() {
     const gallerySlug = currentGalleryItems[0]?.gallery_slug || 'gallery';
-    const mediaSlug = currentGalleryItems[currentItemIndex].slug || currentGalleryItems[currentItemIndex].id || currentItemIndex;
+    const mediaId = currentGalleryItems[currentItemIndex].id || currentItemIndex;
     const baseUrl = `${window.location.origin}${window.location.pathname}`;
-    const newUrl = `${baseUrl}?${gallerySlug}?${mediaSlug}`;
-    history.replaceState({ gallery: gallerySlug, media: mediaSlug }, '', newUrl);
+    const newUrl = `${baseUrl}?${gallerySlug}?gallery=${mediaId}`;
+    history.replaceState({ gallery: gallerySlug, media: mediaId }, '', newUrl);
 }
 
 function navigateToPrevItem() {
@@ -692,13 +692,14 @@ function navigateToNextItem() {
         updateMediaURL();
     }
 }
+
 function closeMediaModal() {
     imageModal.classList.remove('show');
     openModals--;
 
     if (openModals <= 0) document.body.style.overflow = 'auto';
 
-    // ✅ Remove media param, keep gallery only
+    // ✅ Remove media param, keep gallery slug
     const gallerySlug = currentGalleryItems[0]?.gallery_slug || '';
     const baseUrl = `${window.location.origin}${window.location.pathname}`;
     const newUrl = gallerySlug ? `${baseUrl}?${gallerySlug}` : baseUrl;
@@ -706,6 +707,7 @@ function closeMediaModal() {
 
     restoreScrollPosition();
 }
+
 
         function zoomImage(factor) {
             const img = document.getElementById('modal-img'); 
@@ -1008,6 +1010,7 @@ function openOverviewModal(productId, skipHistory = false) {
   overviewModal.classList.add('show');
   document.body.style.overflow = 'hidden';
 }
+
 function openMediaModal(item, type, index = 0, itemsArray = [], skipHistory = false) {
     saveScrollPosition();
     openModals++;
@@ -1023,44 +1026,45 @@ function openMediaModal(item, type, index = 0, itemsArray = [], skipHistory = fa
     if (type === 'image') showCurrentImage();
     else showCurrentVideo();
 
-    // ✅ URL updates: gallery + media
+    // ✅ Nested URL: ?gallerySlug?gallery=mediaId
     const gallerySlug = item.gallery_slug || currentGalleryItems[0]?.gallery_slug || 'gallery';
-    const mediaSlug = item.slug || item.id || index;
+    const mediaId = item.id || index;
     const baseUrl = `${window.location.origin}${window.location.pathname}`;
-    const newUrl = `${baseUrl}?${gallerySlug}?${mediaSlug}`;
+    const newUrl = `${baseUrl}?${gallerySlug}?gallery=${mediaId}`;
 
-    if (!skipHistory) history.pushState({ gallery: gallerySlug, media: mediaSlug }, '', newUrl);
+    if (!skipHistory) history.pushState({ gallery: gallerySlug, media: mediaId }, '', newUrl);
 }
+
 
 function closeOverviewModal() {
     openModals--;
     document.body.style.overflow = 'auto';
     restoreScrollPosition();
 
-    // ✅ Remove all params → back to main page
+    // ✅ Remove all params → back to main URL
     const baseUrl = `${window.location.origin}${window.location.pathname}`;
     history.pushState({}, '', baseUrl);
 }
 function handleDirectLinks(data) {
-    const query = window.location.search.substring(1); // e.g., forest?image123 or forest
+    const query = window.location.search.substring(1); // e.g., forest?gallery=20 or forest
     if (!query) return;
 
-    const [gallerySlug, mediaSlug] = query.split('?');
-
+    const [gallerySlug, mediaParam] = query.split('?');
     const gallery = data.find(g => g.nav_title.toLowerCase().replace(/\s+/g,'') === gallerySlug);
     if (!gallery) return;
 
-    // Scroll to gallery
+    // Scroll to gallery hero
     const hero = document.getElementById(gallerySlug);
     if (hero) hero.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-    // Open gallery overview modal
+    // Open gallery overview
     setTimeout(() => openOverviewModal(gallery.id, true), 200);
 
     // If media exists, open media modal
-    if (mediaSlug) {
+    if (mediaParam?.startsWith('gallery=')) {
+        const mediaId = mediaParam.split('=')[1];
         const allItems = [...(gallery.images || []), ...(gallery.videos || [])];
-        const index = allItems.findIndex(item => (item.id || item.slug || '').toString() === mediaSlug);
+        const index = allItems.findIndex(item => (item.id || item.slug || '').toString() === mediaId);
         if (index >= 0) {
             const item = allItems[index];
             const type = gallery.images.includes(item) ? 'image' : 'video';
@@ -1068,6 +1072,7 @@ function handleDirectLinks(data) {
         }
     }
 }
+
 
 // ---------- browser back/forward ----------
 window.addEventListener('popstate', () => {
