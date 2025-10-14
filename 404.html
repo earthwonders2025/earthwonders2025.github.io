@@ -1,0 +1,10 @@
+
+<script>
+  const path = window.location.pathname;
+  const m = path.match(/\/gallery\/([^/]+)/);
+  if (m) {
+    const slug = m[1];
+    const newUrl = `/gallery/index.html?gallery=${slug}`;
+    window.location.replace(newUrl);
+  }
+</script>
