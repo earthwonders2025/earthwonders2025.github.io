@@ -890,6 +890,7 @@ modalContent.addEventListener("touchend", handlePinchEnd);
 
 
 // ---------- Modal open/close ----------
+// ---------- Modal open/close ----------
 function openOverviewModal(productId, skipHistory = false) {
   saveScrollPosition();
   openModals++;
@@ -898,8 +899,16 @@ function openOverviewModal(productId, skipHistory = false) {
   if (!product) return;
 
   const slug = product.nav_title.toLowerCase().replace(/\s+/g, '');
-  const newUrl = `${window.location.origin}${window.location.pathname}?gallery=${slug}`;
-  if (!skipHistory) history.pushState({ gallery: slug }, '', newUrl);
+  const baseUrl = `${window.location.origin}${window.location.pathname}`;
+  const newUrl = `${baseUrl}?gallery=${slug}`;
+
+  // 👇 if opening from direct link, make sure base page is in history
+  if (skipHistory) {
+    history.replaceState({}, '', baseUrl);
+    history.pushState({ gallery: slug }, '', newUrl);
+  } else {
+    history.pushState({ gallery: slug }, '', newUrl);
+  }
 
   let overviewModal = document.getElementById(`overview-modal-${productId}`);
   if (!overviewModal) {
@@ -984,6 +993,7 @@ function closeOverviewModal(modal) {
     restoreScrollPosition();
   }
 
+  // go back to base page
   history.pushState({}, '', `${window.location.origin}${window.location.pathname}`);
 }
 
@@ -1001,7 +1011,7 @@ function handleDirectGalleryLinks(data) {
   setTimeout(() => openOverviewModal(gallery.id, true), 600);
 }
 
-// Call this after setupNavigation(data)
+// call after setupNavigation(data)
 handleDirectGalleryLinks(data);
 
 // ---------- browser back/forward ----------
@@ -1016,7 +1026,6 @@ window.addEventListener('popstate', () => {
     document.body.style.overflow = 'auto';
   }
 });
-
 
 // Images
 function renderOverviewImages(productId, images) {
