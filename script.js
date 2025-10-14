@@ -680,22 +680,12 @@ function showCurrentVideo() {
         }
 
 
-function updateMediaURL() {
-    const item = currentGalleryItems[currentItemIndex];
-    const product = galleryData.find(p => p.id === item.product_id);
-    if (product) setQueryParam('slug', product.nav_title.toLowerCase().replace(/\s+/g,''));
-    setQueryParam('gallery', item.id);
-}
 function navigateToPrevItem() {
     if (currentItemIndex > 0) {
         currentItemIndex--;
         scale = 1; offsetX = 0; offsetY = 0;
         currentItemType === 'image' ? showCurrentImage() : showCurrentVideo();
-
-        const slug = getQueryParam('slug');
-        const mediaId = currentGalleryItems[currentItemIndex].id;
-        setQueryParam('slug', slug);
-        setQueryParam('gallery', mediaId);
+        updateMediaURL();
     }
 }
 
@@ -704,13 +694,20 @@ function navigateToNextItem() {
         currentItemIndex++;
         scale = 1; offsetX = 0; offsetY = 0;
         currentItemType === 'image' ? showCurrentImage() : showCurrentVideo();
-
-        const slug = getQueryParam('slug');
-        const mediaId = currentGalleryItems[currentItemIndex].id;
-        setQueryParam('slug', slug);
-        setQueryParam('gallery', mediaId);
+        updateMediaURL();
     }
 }
+
+function updateMediaURL() {
+    const item = currentGalleryItems[currentItemIndex];
+    const url = new URL(window.location);
+    // keep existing slug
+    const slug = url.searchParams.get('slug');
+    if (slug) url.searchParams.set('slug', slug);
+    url.searchParams.set('gallery', item.id);
+    history.replaceState({}, '', url);
+}
+
 
 function closeMediaModal() {
     imageModal.classList.remove('show');
@@ -1032,11 +1029,15 @@ function openMediaModal(item, type, index = 0, itemsArray = [], skipHistory = fa
     type === 'image' ? showCurrentImage() : showCurrentVideo();
 
     if (!skipHistory) {
-        const product = galleryData.find(p => p.id === item.product_id);
-        if (product) setQueryParam('slug', product.nav_title.toLowerCase().replace(/\s+/g,''));
-        setQueryParam('gallery', item.id);
+        // ✅ Keep existing slug if present
+        const url = new URL(window.location);
+        const slug = url.searchParams.get('slug');
+        if (slug) url.searchParams.set('slug', slug); // keep existing slug
+        url.searchParams.set('gallery', item.id); // add/update gallery param
+        history.pushState({}, '', url);
     }
 }
+
 
 
 
