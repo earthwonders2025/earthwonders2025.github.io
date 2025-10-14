@@ -1,16 +1,17 @@
 /* ---------- INITIALIZATION ---------- */
 // ---------- URL PARAM HELPERS ----------
-function setQueryParam(key, value) {
-    const url = new URL(window.location.href);
-    if (value === null || value === undefined) url.searchParams.delete(key);
-    else url.searchParams.set(key, value);
-    history.pushState({}, '', url.toString());
+function getQueryParam(key) {
+    const params = new URLSearchParams(window.location.search);
+    return params.get(key);
 }
 
-function getQueryParam(key) {
-    const url = new URL(window.location.href);
-    return url.searchParams.get(key);
+function setQueryParam(key, value) {
+    const url = new URL(window.location);
+    if (value === null || value === undefined) url.searchParams.delete(key);
+    else url.searchParams.set(key, value);
+    history.replaceState({}, '', url);
 }
+
 document.addEventListener('DOMContentLoaded', () => {
     loadFooterContent();
     // renderProducts();
@@ -680,24 +681,21 @@ function showCurrentVideo() {
 
 
 function updateMediaURL() {
-    const slug = currentGalleryItems[0]?.gallery_slug || 'gallery';
-    const mediaId = currentGalleryItems[currentItemIndex].id || currentItemIndex;
-    const baseUrl = window.location.origin + window.location.pathname;
-    const newUrl = `${baseUrl}?slug=${slug}&media=${mediaId}`;
-    history.replaceState({ slug, media: mediaId }, '', newUrl);
+    const item = currentGalleryItems[currentItemIndex];
+    const product = galleryData.find(p => p.id === item.product_id);
+    if (product) setQueryParam('slug', product.nav_title.toLowerCase().replace(/\s+/g,''));
+    setQueryParam('gallery', item.id);
 }
-
 function navigateToPrevItem() {
     if (currentItemIndex > 0) {
         currentItemIndex--;
         scale = 1; offsetX = 0; offsetY = 0;
         currentItemType === 'image' ? showCurrentImage() : showCurrentVideo();
 
-        // ✅ update media param in URL
-        const overview = getQueryParam('overview');
+        const slug = getQueryParam('slug');
         const mediaId = currentGalleryItems[currentItemIndex].id;
-        setQueryParam('overview', overview);  // keep overview
-        setQueryParam('media', mediaId);      // update media only
+        setQueryParam('slug', slug);
+        setQueryParam('gallery', mediaId);
     }
 }
 
@@ -707,11 +705,10 @@ function navigateToNextItem() {
         scale = 1; offsetX = 0; offsetY = 0;
         currentItemType === 'image' ? showCurrentImage() : showCurrentVideo();
 
-        // ✅ update media param in URL
-        const overview = getQueryParam('overview');
+        const slug = getQueryParam('slug');
         const mediaId = currentGalleryItems[currentItemIndex].id;
-        setQueryParam('overview', overview);  // keep overview
-        setQueryParam('media', mediaId);      // update media only
+        setQueryParam('slug', slug);
+        setQueryParam('gallery', mediaId);
     }
 }
 
@@ -720,9 +717,10 @@ function closeMediaModal() {
     document.body.style.overflow = 'auto';
     restoreScrollPosition();
 
-    // remove only media param
-    setQueryParam('media', null);
+    // Remove only gallery param
+    setQueryParam('gallery', null);
 }
+
 
 
         function zoomImage(factor) {
@@ -946,15 +944,9 @@ function openOverviewModal(productId, skipHistory = false) {
     if (!product) return;
 
     if (!skipHistory) {
-        const slug = product.nav_title.toLowerCase().replace(/\s+/g, '');
-        setQueryParam('overview', slug); // only overview
-        setQueryParam('media', null);     // remove media if exists
+        setQueryParam('slug', product.nav_title.toLowerCase().replace(/\s+/g, ''));
+        setQueryParam('gallery', null); // remove media if exists
     }
-
-    const slug = product.nav_title.toLowerCase().replace(/\s+/g, '');
-    const baseUrl = window.location.origin + window.location.pathname;
-    const newUrl = `${baseUrl}?slug=${slug}`;
-    if (!skipHistory) history.pushState({ slug }, '', newUrl);
 
   let overviewModal = document.getElementById(`overview-modal-${productId}`);
   if (!overviewModal) {
@@ -965,6 +957,7 @@ function openOverviewModal(productId, skipHistory = false) {
     // Build modal contents
     let buttonsHTML = '';
     let bodyHTML = '';
+    // before this
 
     if (product.description_text?.trim()) {
       bodyHTML += `
@@ -1039,12 +1032,12 @@ function openMediaModal(item, type, index = 0, itemsArray = [], skipHistory = fa
     type === 'image' ? showCurrentImage() : showCurrentVideo();
 
     if (!skipHistory) {
-        const overview = getQueryParam('overview');
-        const mediaId = item.id || index;
-        setQueryParam('overview', overview); // keep overview
-        setQueryParam('media', mediaId);     // set media
+        const product = galleryData.find(p => p.id === item.product_id);
+        if (product) setQueryParam('slug', product.nav_title.toLowerCase().replace(/\s+/g,''));
+        setQueryParam('gallery', item.id);
     }
 }
+
 
 
 function closeOverviewModal() {
