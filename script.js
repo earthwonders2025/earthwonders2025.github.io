@@ -692,7 +692,12 @@ function navigateToPrevItem() {
         currentItemIndex--;
         scale = 1; offsetX = 0; offsetY = 0;
         currentItemType === 'image' ? showCurrentImage() : showCurrentVideo();
-        updateMediaURL();
+
+        // ✅ update media param in URL
+        const overview = getQueryParam('overview');
+        const mediaId = currentGalleryItems[currentItemIndex].id;
+        setQueryParam('overview', overview);  // keep overview
+        setQueryParam('media', mediaId);      // update media only
     }
 }
 
@@ -701,7 +706,12 @@ function navigateToNextItem() {
         currentItemIndex++;
         scale = 1; offsetX = 0; offsetY = 0;
         currentItemType === 'image' ? showCurrentImage() : showCurrentVideo();
-        updateMediaURL();
+
+        // ✅ update media param in URL
+        const overview = getQueryParam('overview');
+        const mediaId = currentGalleryItems[currentItemIndex].id;
+        setQueryParam('overview', overview);  // keep overview
+        setQueryParam('media', mediaId);      // update media only
     }
 }
 
@@ -1029,12 +1039,13 @@ function openMediaModal(item, type, index = 0, itemsArray = [], skipHistory = fa
     type === 'image' ? showCurrentImage() : showCurrentVideo();
 
     if (!skipHistory) {
-        const overview = getQueryParam('overview'); // keep overview slug
+        const overview = getQueryParam('overview');
         const mediaId = item.id || index;
-        setQueryParam('overview', overview);       // ensure overview stays
-        setQueryParam('media', mediaId);           // add media
+        setQueryParam('overview', overview); // keep overview
+        setQueryParam('media', mediaId);     // set media
     }
 }
+
 
 function closeOverviewModal() {
     openModals--;
