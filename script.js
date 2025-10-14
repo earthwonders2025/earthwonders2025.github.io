@@ -4,17 +4,16 @@ function getQueryParams() {
     return new URLSearchParams(window.location.search);
 }
 
-function updateURL(params, replace = false) {
-    const url = new URL(window.location.origin + window.location.pathname);
-    params.forEach((value, key) => {
-        if (value !== null && value !== undefined && value !== '') {
-            url.searchParams.set(key, value);
-        }
-    });
+function updateURL(param, value, replace = false) {
+    const url = new URL(window.location);
+    if (value === null) {
+        url.searchParams.delete(param);
+    } else {
+        url.searchParams.set(param, value);
+    }
     const method = replace ? 'replaceState' : 'pushState';
     history[method]({}, '', url.toString());
 }
-
 document.addEventListener('DOMContentLoaded', () => {
     loadFooterContent();
     // renderProducts();
@@ -558,29 +557,34 @@ function restoreScrollPosition() {
             });
         }
 
-function openImageModal(item, type, index = 0, itemsArray = [], skipHistory = false) {
-    saveScrollPosition();
-    openModals++;
-
+function openImageModal(item, index = 0, itemsArray = [], skipHistory = false) {
     currentGalleryItems = itemsArray;
     currentItemIndex = index;
-    currentItemType = type;
+    currentItemType = 'image';
 
     imageModal.classList.add('show');
     document.body.style.overflow = 'hidden';
-    scale = 1; offsetX = 0; offsetY = 0;
 
-    if (type === 'image') showCurrentImage();
-    else showCurrentVideo();
-
-    // ✅ URL update: gallery slug = base, media id = current item
-    const gallerySlug = item.gallery_slug || currentGalleryItems[0]?.gallery_slug || 'gallery';
-    const mediaId = item.id || index;
-    const baseUrl = `${window.location.origin}${window.location.pathname}`;
-    const newUrl = `${baseUrl}?${gallerySlug}=${mediaId}`;
+    showCurrentImage();
 
     if (!skipHistory) {
-        history.pushState({ gallery: gallerySlug, media: mediaId }, '', newUrl);
+        updateURL('gallery', item.id);
+        updateURL('youtubevideo', null, true);
+    }
+}
+function openVideoModal(item, index = 0, itemsArray = [], skipHistory = false) {
+    currentGalleryItems = itemsArray;
+    currentItemIndex = index;
+    currentItemType = 'video';
+
+    videoModal.classList.add('show');
+    document.body.style.overflow = 'hidden';
+
+    showCurrentVideo();
+
+    if (!skipHistory) {
+        updateURL('youtubevideo', item.id);
+        updateURL('gallery', null, true);
     }
 }
 
@@ -610,18 +614,32 @@ function openImageModal(item, type, index = 0, itemsArray = [], skipHistory = fa
         // }
 function closeImageModal() {
     imageModal.classList.remove('show');
-    openModals--;
+    document.body.style.overflow = 'auto';
 
-    if (openModals <= 0) {
-        document.body.style.overflow = 'auto';
-        restoreScrollPosition();
+    // return to overview link (?slug=volcanoes)
+    const params = getQueryParams();
+    const slug = params.get('slug');
+    updateURL('gallery', null, true);
+    updateURL('youtubevideo', null, true);
+    if (slug) updateURL('slug', slug, true);
+}
+function closeVideoModal() {
+    const videoEl = videoModal.querySelector('iframe, video');
+    if (videoEl) {
+        // Stop YouTube video or pause HTML5 video
+        const src = videoEl.src;
+        videoEl.src = '';
+        videoEl.src = src;
     }
 
-    // ✅ Reset URL to gallery only, no media
-    const gallerySlug = currentGalleryItems[0]?.gallery_slug || '';
-    const baseUrl = `${window.location.origin}${window.location.pathname}`;
-    const newUrl = gallerySlug ? `${baseUrl}?${gallerySlug}` : baseUrl;
-    history.pushState({}, '', newUrl);
+    videoModal.classList.remove('show');
+    document.body.style.overflow = 'auto';
+
+    const params = getQueryParams();
+    const slug = params.get('slug');
+    updateURL('youtubevideo', null, true);
+    updateURL('gallery', null, true);
+    if (slug) updateURL('slug', slug, true);
 }
 
 function showCurrentImage() {
@@ -686,18 +704,16 @@ function showCurrentVideo() {
 function navigateToPrevItem() {
     if (currentItemIndex > 0) {
         currentItemIndex--;
-        resetMediaView();
         showCurrentMedia();
-        updateDynamicMediaURL();
+        updateDynamicURL();
     }
 }
 
 function navigateToNextItem() {
     if (currentItemIndex < currentGalleryItems.length - 1) {
         currentItemIndex++;
-        resetMediaView();
         showCurrentMedia();
-        updateDynamicMediaURL();
+        updateDynamicURL();
     }
 }
 
@@ -708,18 +724,17 @@ function resetMediaView() {
 }
 
 function showCurrentMedia() {
-    currentItemType === 'image' ? showCurrentImage() : showCurrentVideo();
+    if (currentItemType === 'image') showCurrentImage();
+    else showCurrentVideo();
 }
 
-function updateDynamicMediaURL() {
-    const params = getQueryParams();
-    const slug = params.get('slug');
+function updateDynamicURL() {
     const currentItem = currentGalleryItems[currentItemIndex];
-    const newParams = new Map([
-        ['slug', slug],
-        ['gallery', currentItem.id]
-    ]);
-    updateURL(newParams, true); // replace instead of push
+    if (currentItemType === 'image') {
+        updateURL('gallery', currentItem.id, true);
+    } else {
+        updateURL('youtubevideo', currentItem.id, true);
+    }
 }
 
 
@@ -964,11 +979,9 @@ function openOverviewModal(productId, skipHistory = false) {
     const slug = product.nav_title.toLowerCase().replace(/\s+/g, '');
 
     if (!skipHistory) {
-        const params = new Map([
-            ['slug', slug],
-            ['gallery', null] // remove media
-        ]);
-        updateURL(params);
+        updateURL('slug', slug);
+        updateURL('gallery', null, true);
+        updateURL('youtubevideo', null, true);
     }
 
       let overviewModal = document.getElementById(`overview-modal-${product.id}`);
@@ -1090,22 +1103,24 @@ function handleDirectLinks() {
     const params = getQueryParams();
     const slug = params.get('slug');
     const galleryId = params.get('gallery');
+    const youtubeId = params.get('youtubevideo');
     if (!slug) return;
 
     const product = galleryData.find(p => p.nav_title.toLowerCase().replace(/\s+/g, '') === slug);
     if (!product) return;
 
-    // open overview modal automatically
     openOverviewModal(product.id, true);
 
+    const items = [...(product.images || []), ...(product.videos || [])];
+
     if (galleryId) {
-        const allItems = [...(product.images || []), ...(product.videos || [])];
-        const itemIndex = allItems.findIndex(i => i.id == galleryId);
-        if (itemIndex !== -1) {
-            const item = allItems[itemIndex];
-            const type = product.images.includes(item) ? 'image' : 'video';
-            openMediaModal(item, type, itemIndex, allItems, true);
-        }
+        const img = (product.images || []).find(i => i.id == galleryId);
+        if (img) openImageModal(img, product.images.indexOf(img), product.images, true);
+    }
+
+    if (youtubeId) {
+        const vid = (product.videos || []).find(v => v.id == youtubeId);
+        if (vid) openVideoModal(vid, product.videos.indexOf(vid), product.videos, true);
     }
 }
 
