@@ -549,23 +549,23 @@ function openImageModal(item, type, index = 0, itemsArray = [], skipHistory = fa
     currentItemIndex = index;
     currentItemType = type;
 
-    // Show modal
     imageModal.classList.add('show');
     document.body.style.overflow = 'hidden';
-
     scale = 1; offsetX = 0; offsetY = 0;
 
     if (type === 'image') showCurrentImage();
     else showCurrentVideo();
 
-    // ✅ Update URL
-    const gallerySlug = item.gallery_slug || currentGalleryItems[0].gallery_slug;
-    const mediaSlug = item.slug || index; // unique per image/video
+    // ✅ Fix undefined
+    const gallerySlug = item.gallery_slug || item.gallery_slug || currentGalleryItems[0]?.gallery_slug || 'gallery';
+    const mediaSlug = item.slug || item.id || index;
+
     const baseUrl = `${window.location.origin}${window.location.pathname}`;
     const newUrl = `${baseUrl}?${gallerySlug}=${mediaSlug}`;
 
     if (!skipHistory) history.pushState({ gallery: gallerySlug, media: mediaSlug }, '', newUrl);
 }
+
 
         // function closeImageModal() {
         //     imageModal.classList.remove('show');
@@ -1019,6 +1019,7 @@ function handleDirectGalleryLinks(data) {
     if (!query) return;
 
     const [gallerySlug, mediaSlug] = query.split('=');
+    if (!gallerySlug) return;
 
     const gallery = data.find(g => g.nav_title.toLowerCase().replace(/\s+/g,'') === gallerySlug);
     if (!gallery) return;
