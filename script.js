@@ -889,6 +889,7 @@ modalContent.addEventListener("touchend", handlePinchEnd);
 // }
 
 
+// ---------- Modal open/close ----------
 function openOverviewModal(productId, skipHistory = false) {
   saveScrollPosition();
   openModals++;
@@ -896,18 +897,9 @@ function openOverviewModal(productId, skipHistory = false) {
   const product = galleryData.find(g => g.id === productId);
   if (!product) return;
 
-  // slug: remove spaces, lowercase
   const slug = product.nav_title.toLowerCase().replace(/\s+/g, '');
-  
-  // Compute base path before "/gallery"
-  const pathParts = window.location.pathname.split('/gallery');
-  const basePath = pathParts[0] || '';
-  
-  const newUrl = `${basePath}/gallery/${slug}`;
-
-  if (!skipHistory) {
-    history.pushState({ gallery: slug }, '', newUrl);
-  }
+  const newUrl = `${window.location.origin}${window.location.pathname}?gallery=${slug}`;
+  if (!skipHistory) history.pushState({ gallery: slug }, '', newUrl);
 
   let overviewModal = document.getElementById(`overview-modal-${productId}`);
   if (!overviewModal) {
@@ -915,6 +907,7 @@ function openOverviewModal(productId, skipHistory = false) {
     overviewModal.id = `overview-modal-${productId}`;
     overviewModal.className = 'overview-modal';
 
+    // Build modal contents
     let buttonsHTML = '';
     let bodyHTML = '';
 
@@ -922,8 +915,7 @@ function openOverviewModal(productId, skipHistory = false) {
       bodyHTML += `
         <div class="overview-content active" id="overview-text-${productId}">
           <p>${product.description_text}</p>
-        </div>
-      `;
+        </div>`;
       buttonsHTML += `<button class="active" data-target="overview-text-${productId}">Overview</button>`;
     }
 
@@ -932,8 +924,7 @@ function openOverviewModal(productId, skipHistory = false) {
         <div class="overview-content" id="overview-images-${productId}">
           <div class="images" id="overview-images-container-${productId}"></div>
           <div class="pagination" id="overview-images-pagination-${productId}"></div>
-        </div>
-      `;
+        </div>`;
       const cls = buttonsHTML ? '' : 'active';
       buttonsHTML += `<button class="${cls}" data-target="overview-images-${productId}">Images</button>`;
     }
@@ -943,8 +934,7 @@ function openOverviewModal(productId, skipHistory = false) {
         <div class="overview-content" id="overview-videos-${productId}">
           <div class="images" id="overview-videos-container-${productId}"></div>
           <div class="pagination" id="overview-videos-pagination-${productId}"></div>
-        </div>
-      `;
+        </div>`;
       const cls = buttonsHTML ? '' : 'active';
       buttonsHTML += `<button class="${cls}" data-target="overview-videos-${productId}">Videos</button>`;
     }
@@ -954,25 +944,19 @@ function openOverviewModal(productId, skipHistory = false) {
         <h2>${product.description_title || 'Details'}</h2>
         <button class="close-overview">×</button>
       </div>
-      <div class="overview-body">${bodyHTML || "<p style='text-align:center;'>No details available.</p>"}</div>
+      <div class="overview-body">
+        ${bodyHTML || "<p style='text-align:center;'>No details available.</p>"}
+      </div>
       <div class="overview-pagination">${buttonsHTML}</div>
     `;
 
     document.body.appendChild(overviewModal);
 
-    // Close via × button
-    overviewModal.querySelector('.close-overview').addEventListener('click', () => {
-      closeOverviewModal(overviewModal);
-    });
+    // close modal
+    overviewModal.querySelector('.close-overview').addEventListener('click', () => closeOverviewModal(overviewModal));
+    overviewModal.addEventListener('click', e => { if (e.target === overviewModal) closeOverviewModal(overviewModal); });
 
-    // Close by clicking outside
-    overviewModal.addEventListener('click', (e) => {
-      if (e.target === overviewModal) {
-        closeOverviewModal(overviewModal);
-      }
-    });
-
-    // Tab switching
+    // tab switching
     overviewModal.querySelectorAll('.overview-pagination button').forEach(btn => {
       btn.addEventListener('click', () => {
         overviewModal.querySelectorAll('.overview-pagination button').forEach(b => b.classList.remove('active'));
@@ -1000,36 +984,31 @@ function closeOverviewModal(modal) {
     restoreScrollPosition();
   }
 
-  const pathParts = window.location.pathname.split('/gallery');
-  const basePath = pathParts[0] || '';
-  const mainGalleryUrl = `${basePath}/gallery`;
-  history.pushState({}, '', mainGalleryUrl);
+  history.pushState({}, '', `${window.location.origin}${window.location.pathname}`);
 }
 
-// ---------- in fetchGalleries(), after setupNavigation(data) ----------
-function handleDirectGalleryPath(data) {
-  const match = window.location.pathname.match(/\/gallery\/([^/]+)/);
-  if (!match) return;
-  const slug = match[1];
+// ---------- handle direct links ----------
+function handleDirectGalleryLinks(data) {
+  const urlParams = new URLSearchParams(window.location.search);
+  const slug = urlParams.get('gallery');
+  if (!slug) return;
+
   const gallery = data.find(g => g.nav_title.toLowerCase().replace(/\s+/g, '') === slug);
   if (!gallery) return;
 
-  const heroId = gallery.nav_title.toLowerCase().replace(/\s+/g, '-');
-  const heroEl = document.getElementById(heroId);
-  if (heroEl) {
-    heroEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }
+  const hero = document.getElementById(gallery.nav_title.toLowerCase().replace(/\s+/g, '-'));
+  if (hero) hero.scrollIntoView({ behavior: 'smooth', block: 'center' });
   setTimeout(() => openOverviewModal(gallery.id, true), 600);
 }
 
 // Call this after setupNavigation(data)
-handleDirectGalleryPath(data);
+handleDirectGalleryLinks(data);
 
-// ---------- handle popstate for back/forward navigation ----------
+// ---------- browser back/forward ----------
 window.addEventListener('popstate', () => {
-  const match = window.location.pathname.match(/\/gallery\/([^/]+)/);
-  if (match) {
-    const slug = match[1];
+  const urlParams = new URLSearchParams(window.location.search);
+  const slug = urlParams.get('gallery');
+  if (slug) {
     const g = galleryData.find(x => x.nav_title.toLowerCase().replace(/\s+/g, '') === slug);
     if (g) openOverviewModal(g.id, true);
   } else {
