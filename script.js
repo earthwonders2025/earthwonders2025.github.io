@@ -505,19 +505,16 @@ function setupParallaxEffect() {
 
 
         /* ---------- SCROLL MANAGEMENT ---------- */
-        function saveScrollPosition() {
-            scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
-        }
+// Save the scroll position before opening any modal
+function saveScrollPosition() {
+    lastScrollY = window.scrollY || window.pageYOffset;
+}
 
-        function restoreScrollPosition() {
-            window.scrollTo(0, scrollPosition);
-            
-            // Add a smooth restoration effect
-            document.body.classList.add('smooth-restore');
-            setTimeout(() => {
-                document.body.classList.remove('smooth-restore');
-            }, 700);
-        }
+// Restore the scroll position after closing modal
+function restoreScrollPosition() {
+    // Use 'instant' so the page does not jump unexpectedly
+    window.scrollTo({ top: lastScrollY, behavior: 'instant' });
+}
 
         /* ---------- MODAL MANAGEMENT ---------- */
         function setupEventListeners() {
@@ -984,17 +981,17 @@ function openOverviewModal(productId, skipHistory = false) {
 }
 
 function closeOverviewModal(modal) {
-  modal.classList.remove('show');
-  modal.remove();
-  openModals--;
+    modal.classList.remove('show');
+    modal.remove();
+    openModals--;
 
-  if (openModals <= 0) {
-    document.body.style.overflow = 'auto';
-    restoreScrollPosition();
-  }
+    if (openModals <= 0) {
+        restoreScrollPosition();          // restore BEFORE unlocking scroll
+        document.body.style.overflow = 'auto';
+    }
 
-  // go back to base page
-  history.pushState({}, '', `${window.location.origin}${window.location.pathname}`);
+    // Update URL last
+    history.pushState({}, '', `${window.location.origin}${window.location.pathname}`);
 }
 
 // ---------- handle direct links ----------
