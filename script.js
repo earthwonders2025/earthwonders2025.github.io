@@ -708,12 +708,12 @@ function navigateToNextItem() {
 function closeMediaModal() {
     imageModal.classList.remove('show');
     document.body.style.overflow = 'auto';
-
-    // remove media param only
-    setQueryParam('media', null);
-    
     restoreScrollPosition();
+
+    // remove only media param
+    setQueryParam('media', null);
 }
+
 
         function zoomImage(factor) {
             const img = document.getElementById('modal-img'); 
@@ -932,13 +932,13 @@ modalContent.addEventListener("touchend", handlePinchEnd);
 
 // ---------- Modal open/close ----------
 function openOverviewModal(productId, skipHistory = false) {
-    saveScrollPosition();
-       const product = galleryData.find(g => g.id === productId);
+    const product = galleryData.find(g => g.id === productId);
     if (!product) return;
 
     if (!skipHistory) {
         const slug = product.nav_title.toLowerCase().replace(/\s+/g, '');
-        setQueryParam('slug', slug); // only overview slug
+        setQueryParam('overview', slug); // only overview
+        setQueryParam('media', null);     // remove media if exists
     }
 
     const slug = product.nav_title.toLowerCase().replace(/\s+/g, '');
@@ -1029,9 +1029,10 @@ function openMediaModal(item, type, index = 0, itemsArray = [], skipHistory = fa
     type === 'image' ? showCurrentImage() : showCurrentVideo();
 
     if (!skipHistory) {
-        const slug = getQueryParam('slug'); // keep overview slug
+        const overview = getQueryParam('overview'); // keep overview slug
         const mediaId = item.id || index;
-        setQueryParam('media', mediaId); // add media param
+        setQueryParam('overview', overview);       // ensure overview stays
+        setQueryParam('media', mediaId);           // add media
     }
 }
 
@@ -1040,31 +1041,30 @@ function closeOverviewModal() {
     document.body.style.overflow = 'auto';
     restoreScrollPosition();
 
-    // remove all query params
-    setQueryParam('slug', null);
+    // remove all params
+    setQueryParam('overview', null);
     setQueryParam('media', null);
 }
 // --- Handle Direct Links ---
 function handleDirectLinks(data) {
-    const slug = getQueryParam('slug');
-    const media = getQueryParam('media');
+    const overviewSlug = getQueryParam('overview');
+    const mediaId = getQueryParam('media');
+    if (!overviewSlug) return;
 
-    if (!slug) return;
-
-    const gallery = data.find(g => g.nav_title.toLowerCase().replace(/\s+/g,'') === slug);
+    const gallery = data.find(g => g.nav_title.toLowerCase().replace(/\s+/g,'') === overviewSlug);
     if (!gallery) return;
 
-    // scroll to overview
-    const hero = document.getElementById(slug);
+    // scroll to gallery
+    const hero = document.getElementById(overviewSlug);
     if (hero) hero.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
     // open overview modal
     setTimeout(() => openOverviewModal(gallery.id, true), 200);
 
-    // open media if exists
-    if (media) {
+    // open media modal if exists
+    if (mediaId) {
         const allItems = [...(gallery.images || []), ...(gallery.videos || [])];
-        const index = allItems.findIndex(item => (item.id || item.slug || '').toString() === media);
+        const index = allItems.findIndex(item => (item.id || item.slug || '').toString() === mediaId);
         if (index >= 0) {
             const type = gallery.images.includes(allItems[index]) ? 'image' : 'video';
             setTimeout(() => openMediaModal(allItems[index], type, index, allItems, true), 600);
