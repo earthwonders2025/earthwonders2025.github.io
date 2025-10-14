@@ -753,123 +753,274 @@ modalContent.addEventListener("touchend", handlePinchEnd);
             container.appendChild(makeBtn('Last', totalPages, currentPage === totalPages));
         }
 
-        /* ---------- OVERVIEW MODAL FUNCTIONS ---------- */
-function openOverviewModal(productId) {
-    saveScrollPosition();
-    openModals++;
+//         /* ---------- OVERVIEW MODAL FUNCTIONS ---------- */
+// function openOverviewModal(productId) {
+//     saveScrollPosition();
+//     openModals++;
 
-    const product = galleryData.find(g => g.id === productId); // use find, not index
-    if (!product) return;
+//     const product = galleryData.find(g => g.id === productId); // use find, not index
+//     if (!product) return;
 
-    let overviewModal = document.getElementById(`overview-modal-${productId}`);
-    if (!overviewModal) {
-        overviewModal = document.createElement('div');
-        overviewModal.id = `overview-modal-${productId}`;
-        overviewModal.className = 'overview-modal';
-   let buttonsHTML = "";
-let bodyHTML = "";
+//     let overviewModal = document.getElementById(`overview-modal-${productId}`);
+//     if (!overviewModal) {
+//         overviewModal = document.createElement('div');
+//         overviewModal.id = `overview-modal-${productId}`;
+//         overviewModal.className = 'overview-modal';
+//    let buttonsHTML = "";
+// let bodyHTML = "";
 
-// ✅ Overview text (only if exists)
-if (product.description_text && product.description_text.trim() !== "") {
-    bodyHTML += `
+// // ✅ Overview text (only if exists)
+// if (product.description_text && product.description_text.trim() !== "") {
+//     bodyHTML += `
+//         <div class="overview-content active" id="overview-text-${productId}">
+//             <p>${product.description_text}</p>
+//         </div>
+//     `;
+//     buttonsHTML += `<button class="active" data-target="overview-text-${productId}">Overview</button>`;
+// }
+
+// // ✅ Images (only if images exist)
+// if (product.images && product.images.length > 0) {
+//     bodyHTML += `
+//         <div class="overview-content" id="overview-images-${productId}">
+//             <div class="images" id="overview-images-container-${productId}"></div>
+//             <div class="pagination" id="overview-images-pagination-${productId}"></div>
+//         </div>
+//     `;
+//     // Only active if no text
+//     const activeClass = !buttonsHTML ? "active" : "";
+//     buttonsHTML += `<button class="${activeClass}" data-target="overview-images-${productId}">Images</button>`;
+// }
+
+// // ✅ Videos (only if videos exist)
+// if (product.videos && product.videos.length > 0) {
+//     bodyHTML += `
+//         <div class="overview-content" id="overview-videos-${productId}">
+//             <div class="images" id="overview-videos-container-${productId}"></div>
+//             <div class="pagination" id="overview-videos-pagination-${productId}"></div>
+//         </div>
+//     `;
+//     const activeClass = !buttonsHTML ? "active" : "";
+//     buttonsHTML += `<button class="${activeClass}" data-target="overview-videos-${productId}">Videos</button>`;
+// }
+
+// // ✅ Build modal dynamically
+// overviewModal.innerHTML = `
+//     <div class="overview-header">
+//         <h2>${product.description_title || "Details"}</h2>
+//         <button class="close-overview">×</button>
+//     </div>
+//     <div class="overview-body">
+//         ${bodyHTML || "<p style='text-align:center;'>No details available.</p>"}
+//     </div>
+//     <div class="overview-pagination">
+//         ${buttonsHTML}
+//     </div>
+// `;
+
+//         document.body.appendChild(overviewModal);
+
+//         // Close button
+// overviewModal.querySelector('.close-overview').addEventListener('click', () => {
+//     overviewModal.classList.remove('show');
+//     overviewModal.remove();
+//     openModals--;
+
+//     if (openModals <= 0) {
+//         document.body.style.overflow = 'auto';
+
+//         // 🧠 Delay to allow DOM reflow before restoring scroll
+//         setTimeout(() => {
+//             requestAnimationFrame(() => {
+//                 window.scrollTo({ top: scrollPosition, behavior: 'instant' });
+//             });
+//         }, 300);
+//     }
+// });
+
+
+//         // Close on clicking outside
+//         overviewModal.addEventListener('click', (e) => {
+//             if (e.target === overviewModal) {
+//                 overviewModal.classList.remove('show');
+//                 overviewModal.remove();
+//                 openModals--;
+//                 if (openModals <= 0) {
+//                     document.body.style.overflow = 'auto';
+//                     restoreScrollPosition();
+//                 }
+//             }
+//         });
+
+//         // Tab switching
+//         overviewModal.querySelectorAll('.overview-pagination button').forEach(button => {
+//             button.addEventListener('click', () => {
+//                 overviewModal.querySelectorAll('.overview-pagination button').forEach(btn => btn.classList.remove('active'));
+//                 button.classList.add('active');
+//                 overviewModal.querySelectorAll('.overview-content').forEach(c => c.classList.remove('active'));
+//                 document.getElementById(button.dataset.target).classList.add('active');
+//             });
+//         });
+
+//         // Render images/videos
+//         renderOverviewImages(productId, product.images || []);
+//         renderOverviewVideos(productId, product.videos || []);
+//     }
+
+//     overviewModal.classList.add('show');
+//     document.body.style.overflow = 'hidden';
+// }
+
+
+function openOverviewModal(productId, skipHistory = false) {
+  saveScrollPosition();
+  openModals++;
+
+  const product = galleryData.find(g => g.id === productId);
+  if (!product) return;
+
+  // slug: remove spaces, lowercase
+  const slug = product.nav_title.toLowerCase().replace(/\s+/g, '');
+  
+  // Compute base path before "/gallery"
+  const pathParts = window.location.pathname.split('/gallery');
+  const basePath = pathParts[0] || '';
+  
+  const newUrl = `${basePath}/gallery/${slug}`;
+
+  if (!skipHistory) {
+    history.pushState({ gallery: slug }, '', newUrl);
+  }
+
+  let overviewModal = document.getElementById(`overview-modal-${productId}`);
+  if (!overviewModal) {
+    overviewModal = document.createElement('div');
+    overviewModal.id = `overview-modal-${productId}`;
+    overviewModal.className = 'overview-modal';
+
+    let buttonsHTML = '';
+    let bodyHTML = '';
+
+    if (product.description_text?.trim()) {
+      bodyHTML += `
         <div class="overview-content active" id="overview-text-${productId}">
-            <p>${product.description_text}</p>
+          <p>${product.description_text}</p>
         </div>
-    `;
-    buttonsHTML += `<button class="active" data-target="overview-text-${productId}">Overview</button>`;
-}
-
-// ✅ Images (only if images exist)
-if (product.images && product.images.length > 0) {
-    bodyHTML += `
-        <div class="overview-content" id="overview-images-${productId}">
-            <div class="images" id="overview-images-container-${productId}"></div>
-            <div class="pagination" id="overview-images-pagination-${productId}"></div>
-        </div>
-    `;
-    // Only active if no text
-    const activeClass = !buttonsHTML ? "active" : "";
-    buttonsHTML += `<button class="${activeClass}" data-target="overview-images-${productId}">Images</button>`;
-}
-
-// ✅ Videos (only if videos exist)
-if (product.videos && product.videos.length > 0) {
-    bodyHTML += `
-        <div class="overview-content" id="overview-videos-${productId}">
-            <div class="images" id="overview-videos-container-${productId}"></div>
-            <div class="pagination" id="overview-videos-pagination-${productId}"></div>
-        </div>
-    `;
-    const activeClass = !buttonsHTML ? "active" : "";
-    buttonsHTML += `<button class="${activeClass}" data-target="overview-videos-${productId}">Videos</button>`;
-}
-
-// ✅ Build modal dynamically
-overviewModal.innerHTML = `
-    <div class="overview-header">
-        <h2>${product.description_title || "Details"}</h2>
-        <button class="close-overview">×</button>
-    </div>
-    <div class="overview-body">
-        ${bodyHTML || "<p style='text-align:center;'>No details available.</p>"}
-    </div>
-    <div class="overview-pagination">
-        ${buttonsHTML}
-    </div>
-`;
-
-        document.body.appendChild(overviewModal);
-
-        // Close button
-overviewModal.querySelector('.close-overview').addEventListener('click', () => {
-    overviewModal.classList.remove('show');
-    overviewModal.remove();
-    openModals--;
-
-    if (openModals <= 0) {
-        document.body.style.overflow = 'auto';
-
-        // 🧠 Delay to allow DOM reflow before restoring scroll
-        setTimeout(() => {
-            requestAnimationFrame(() => {
-                window.scrollTo({ top: scrollPosition, behavior: 'instant' });
-            });
-        }, 300);
+      `;
+      buttonsHTML += `<button class="active" data-target="overview-text-${productId}">Overview</button>`;
     }
+
+    if (product.images?.length) {
+      bodyHTML += `
+        <div class="overview-content" id="overview-images-${productId}">
+          <div class="images" id="overview-images-container-${productId}"></div>
+          <div class="pagination" id="overview-images-pagination-${productId}"></div>
+        </div>
+      `;
+      const cls = buttonsHTML ? '' : 'active';
+      buttonsHTML += `<button class="${cls}" data-target="overview-images-${productId}">Images</button>`;
+    }
+
+    if (product.videos?.length) {
+      bodyHTML += `
+        <div class="overview-content" id="overview-videos-${productId}">
+          <div class="images" id="overview-videos-container-${productId}"></div>
+          <div class="pagination" id="overview-videos-pagination-${productId}"></div>
+        </div>
+      `;
+      const cls = buttonsHTML ? '' : 'active';
+      buttonsHTML += `<button class="${cls}" data-target="overview-videos-${productId}">Videos</button>`;
+    }
+
+    overviewModal.innerHTML = `
+      <div class="overview-header">
+        <h2>${product.description_title || 'Details'}</h2>
+        <button class="close-overview">×</button>
+      </div>
+      <div class="overview-body">${bodyHTML || "<p style='text-align:center;'>No details available.</p>"}</div>
+      <div class="overview-pagination">${buttonsHTML}</div>
+    `;
+
+    document.body.appendChild(overviewModal);
+
+    // Close via × button
+    overviewModal.querySelector('.close-overview').addEventListener('click', () => {
+      closeOverviewModal(overviewModal);
+    });
+
+    // Close by clicking outside
+    overviewModal.addEventListener('click', (e) => {
+      if (e.target === overviewModal) {
+        closeOverviewModal(overviewModal);
+      }
+    });
+
+    // Tab switching
+    overviewModal.querySelectorAll('.overview-pagination button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        overviewModal.querySelectorAll('.overview-pagination button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        overviewModal.querySelectorAll('.overview-content').forEach(c => c.classList.remove('active'));
+        document.getElementById(btn.dataset.target).classList.add('active');
+      });
+    });
+
+    renderOverviewImages(productId, product.images || []);
+    renderOverviewVideos(productId, product.videos || []);
+  }
+
+  overviewModal.classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeOverviewModal(modal) {
+  modal.classList.remove('show');
+  modal.remove();
+  openModals--;
+
+  if (openModals <= 0) {
+    document.body.style.overflow = 'auto';
+    restoreScrollPosition();
+  }
+
+  const pathParts = window.location.pathname.split('/gallery');
+  const basePath = pathParts[0] || '';
+  const mainGalleryUrl = `${basePath}/gallery`;
+  history.pushState({}, '', mainGalleryUrl);
+}
+
+// ---------- in fetchGalleries(), after setupNavigation(data) ----------
+function handleDirectGalleryPath(data) {
+  const match = window.location.pathname.match(/\/gallery\/([^/]+)/);
+  if (!match) return;
+  const slug = match[1];
+  const gallery = data.find(g => g.nav_title.toLowerCase().replace(/\s+/g, '') === slug);
+  if (!gallery) return;
+
+  const heroId = gallery.nav_title.toLowerCase().replace(/\s+/g, '-');
+  const heroEl = document.getElementById(heroId);
+  if (heroEl) {
+    heroEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+  setTimeout(() => openOverviewModal(gallery.id, true), 600);
+}
+
+// Call this after setupNavigation(data)
+handleDirectGalleryPath(data);
+
+// ---------- handle popstate for back/forward navigation ----------
+window.addEventListener('popstate', () => {
+  const match = window.location.pathname.match(/\/gallery\/([^/]+)/);
+  if (match) {
+    const slug = match[1];
+    const g = galleryData.find(x => x.nav_title.toLowerCase().replace(/\s+/g, '') === slug);
+    if (g) openOverviewModal(g.id, true);
+  } else {
+    document.querySelectorAll('.overview-modal.show').forEach(m => m.remove());
+    document.body.style.overflow = 'auto';
+  }
 });
 
-
-        // Close on clicking outside
-        overviewModal.addEventListener('click', (e) => {
-            if (e.target === overviewModal) {
-                overviewModal.classList.remove('show');
-                overviewModal.remove();
-                openModals--;
-                if (openModals <= 0) {
-                    document.body.style.overflow = 'auto';
-                    restoreScrollPosition();
-                }
-            }
-        });
-
-        // Tab switching
-        overviewModal.querySelectorAll('.overview-pagination button').forEach(button => {
-            button.addEventListener('click', () => {
-                overviewModal.querySelectorAll('.overview-pagination button').forEach(btn => btn.classList.remove('active'));
-                button.classList.add('active');
-                overviewModal.querySelectorAll('.overview-content').forEach(c => c.classList.remove('active'));
-                document.getElementById(button.dataset.target).classList.add('active');
-            });
-        });
-
-        // Render images/videos
-        renderOverviewImages(productId, product.images || []);
-        renderOverviewVideos(productId, product.videos || []);
-    }
-
-    overviewModal.classList.add('show');
-    document.body.style.overflow = 'hidden';
-}
 
 // Images
 function renderOverviewImages(productId, images) {
