@@ -100,6 +100,23 @@ async function fetchGalleries() {
         galleryData = data; // store globally
         renderGalleries(data);
         setupNavigation(data);
+        // --- handle direct links from ?gallery=slug or /gallery/slug ---
+const urlParams = new URLSearchParams(window.location.search);
+let slug = urlParams.get('gallery');
+
+if (!slug) {
+  const match = window.location.pathname.match(/\/gallery\/([^/]+)/);
+  if (match) slug = match[1];
+}
+
+if (slug) {
+  const gallery = data.find(g => g.nav_title.toLowerCase().replace(/\s+/g, '') === slug);
+  if (gallery) {
+    const hero = document.getElementById(gallery.nav_title.toLowerCase().replace(/\s+/g, '-'));
+    if (hero) hero.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setTimeout(() => openOverviewModal(gallery.id, true), 600);
+  }
+}
     } catch (error) {
         document.getElementById("product-content").innerHTML =
             `<p style="color:red;">${error.message}</p>`;
