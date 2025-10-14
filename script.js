@@ -1,15 +1,18 @@
 /* ---------- INITIALIZATION ---------- */
 // ---------- URL PARAM HELPERS ----------
-function getQueryParam(key) {
-    const params = new URLSearchParams(window.location.search);
-    return params.get(key);
+function getQueryParams() {
+    return new URLSearchParams(window.location.search);
 }
 
-function setQueryParam(key, value) {
-    const url = new URL(window.location);
-    if (value === null || value === undefined) url.searchParams.delete(key);
-    else url.searchParams.set(key, value);
-    history.replaceState({}, '', url);
+function updateURL(params, replace = false) {
+    const url = new URL(window.location.origin + window.location.pathname);
+    params.forEach((value, key) => {
+        if (value !== null && value !== undefined && value !== '') {
+            url.searchParams.set(key, value);
+        }
+    });
+    const method = replace ? 'replaceState' : 'pushState';
+    history[method]({}, '', url.toString());
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -940,16 +943,22 @@ function openOverviewModal(productId, skipHistory = false) {
     const product = galleryData.find(g => g.id === productId);
     if (!product) return;
 
+    const slug = product.nav_title.toLowerCase().replace(/\s+/g, '');
+
     if (!skipHistory) {
-        setQueryParam('slug', product.nav_title.toLowerCase().replace(/\s+/g, ''));
-        setQueryParam('gallery', null); // remove media if exists
+        const params = new Map([
+            ['slug', slug],
+            ['gallery', null] // remove media
+        ]);
+        updateURL(params);
     }
 
-  let overviewModal = document.getElementById(`overview-modal-${productId}`);
-  if (!overviewModal) {
-    overviewModal = document.createElement('div');
-    overviewModal.id = `overview-modal-${productId}`;
-    overviewModal.className = 'overview-modal';
+      let overviewModal = document.getElementById(`overview-modal-${product.id}`);
+    if (!overviewModal) {
+        overviewModal = document.createElement('div');
+        overviewModal.id = `overview-modal-${product.id}`;
+        overviewModal.className = 'overview-modal';
+
 
     // Build modal contents
     let buttonsHTML = '';
@@ -1013,6 +1022,8 @@ function openOverviewModal(productId, skipHistory = false) {
 
     renderOverviewImages(productId, product.images || []);
     renderOverviewVideos(productId, product.videos || []);
+    overviewModal.classList.add('show');
+    document.body.style.overflow = 'hidden'
   }
 
   overviewModal.classList.add('show');
