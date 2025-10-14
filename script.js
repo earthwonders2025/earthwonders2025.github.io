@@ -699,7 +699,7 @@ function closeMediaModal() {
 
     if (openModals <= 0) document.body.style.overflow = 'auto';
 
-    // ✅ Remove media param, keep gallery slug
+    // ✅ Remove gallery=XX but keep overview slug
     const gallerySlug = currentGalleryItems[0]?.gallery_slug || '';
     const baseUrl = `${window.location.origin}${window.location.pathname}`;
     const newUrl = gallerySlug ? `${baseUrl}?${gallerySlug}` : baseUrl;
@@ -707,7 +707,6 @@ function closeMediaModal() {
 
     restoreScrollPosition();
 }
-
 
         function zoomImage(factor) {
             const img = document.getElementById('modal-img'); 
@@ -1010,7 +1009,6 @@ function openOverviewModal(productId, skipHistory = false) {
   overviewModal.classList.add('show');
   document.body.style.overflow = 'hidden';
 }
-
 function openMediaModal(item, type, index = 0, itemsArray = [], skipHistory = false) {
     saveScrollPosition();
     openModals++;
@@ -1023,10 +1021,9 @@ function openMediaModal(item, type, index = 0, itemsArray = [], skipHistory = fa
     document.body.style.overflow = 'hidden';
     scale = 1; offsetX = 0; offsetY = 0;
 
-    if (type === 'image') showCurrentImage();
-    else showCurrentVideo();
+    type === 'image' ? showCurrentImage() : showCurrentVideo();
 
-    // ✅ Nested URL: ?gallerySlug?gallery=mediaId
+    // ✅ Nested URL: keep gallery slug, add gallery=XX
     const gallerySlug = item.gallery_slug || currentGalleryItems[0]?.gallery_slug || 'gallery';
     const mediaId = item.id || index;
     const baseUrl = `${window.location.origin}${window.location.pathname}`;
@@ -1046,21 +1043,21 @@ function closeOverviewModal() {
     history.pushState({}, '', baseUrl);
 }
 function handleDirectLinks(data) {
-    const query = window.location.search.substring(1); // e.g., forest?gallery=20 or forest
+    const query = window.location.search.substring(1); // e.g., forest?gallery=20
     if (!query) return;
 
     const [gallerySlug, mediaParam] = query.split('?');
     const gallery = data.find(g => g.nav_title.toLowerCase().replace(/\s+/g,'') === gallerySlug);
     if (!gallery) return;
 
-    // Scroll to gallery hero
+    // Scroll to gallery
     const hero = document.getElementById(gallerySlug);
     if (hero) hero.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
     // Open gallery overview
     setTimeout(() => openOverviewModal(gallery.id, true), 200);
 
-    // If media exists, open media modal
+    // Open media if param exists
     if (mediaParam?.startsWith('gallery=')) {
         const mediaId = mediaParam.split('=')[1];
         const allItems = [...(gallery.images || []), ...(gallery.videos || [])];
@@ -1072,7 +1069,6 @@ function handleDirectLinks(data) {
         }
     }
 }
-
 
 // ---------- browser back/forward ----------
 window.addEventListener('popstate', () => {
