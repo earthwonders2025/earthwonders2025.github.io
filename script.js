@@ -686,30 +686,42 @@ function showCurrentVideo() {
 function navigateToPrevItem() {
     if (currentItemIndex > 0) {
         currentItemIndex--;
-        scale = 1; offsetX = 0; offsetY = 0;
-        currentItemType === 'image' ? showCurrentImage() : showCurrentVideo();
-        updateMediaURL();
+        resetMediaView();
+        showCurrentMedia();
+        updateDynamicMediaURL();
     }
 }
 
 function navigateToNextItem() {
     if (currentItemIndex < currentGalleryItems.length - 1) {
         currentItemIndex++;
-        scale = 1; offsetX = 0; offsetY = 0;
-        currentItemType === 'image' ? showCurrentImage() : showCurrentVideo();
-        updateMediaURL();
+        resetMediaView();
+        showCurrentMedia();
+        updateDynamicMediaURL();
     }
 }
 
-function updateMediaURL() {
-    const item = currentGalleryItems[currentItemIndex];
-    const url = new URL(window.location);
-    // keep existing slug
-    const slug = url.searchParams.get('slug');
-    if (slug) url.searchParams.set('slug', slug);
-    url.searchParams.set('gallery', item.id);
-    history.replaceState({}, '', url);
+function resetMediaView() {
+    scale = 1;
+    offsetX = 0;
+    offsetY = 0;
 }
+
+function showCurrentMedia() {
+    currentItemType === 'image' ? showCurrentImage() : showCurrentVideo();
+}
+
+function updateDynamicMediaURL() {
+    const params = getQueryParams();
+    const slug = params.get('slug');
+    const currentItem = currentGalleryItems[currentItemIndex];
+    const newParams = new Map([
+        ['slug', slug],
+        ['gallery', currentItem.id]
+    ]);
+    updateURL(newParams, true); // replace instead of push
+}
+
 
 
 function closeMediaModal() {
@@ -717,8 +729,14 @@ function closeMediaModal() {
     document.body.style.overflow = 'auto';
     restoreScrollPosition();
 
-    // Remove only gallery param
-    setQueryParam('gallery', null);
+    // remove only gallery param
+    const params = getQueryParams();
+    const slug = params.get('slug');
+    const newParams = new Map([
+        ['slug', slug],
+        ['gallery', null]
+    ]);
+    updateURL(newParams, true);
 }
 
 
@@ -1040,12 +1058,15 @@ function openMediaModal(item, type, index = 0, itemsArray = [], skipHistory = fa
     type === 'image' ? showCurrentImage() : showCurrentVideo();
 
     if (!skipHistory) {
-        // ✅ Keep existing slug if present
-        const url = new URL(window.location);
-        const slug = url.searchParams.get('slug');
-        if (slug) url.searchParams.set('slug', slug); // keep existing slug
-        url.searchParams.set('gallery', item.id); // add/update gallery param
-        history.pushState({}, '', url);
+        const params = getQueryParams();
+        const slug = params.get('slug');
+        const galleryId = item.id;
+
+        const newParams = new Map([
+            ['slug', slug],
+            ['gallery', galleryId]
+        ]);
+        updateURL(newParams);
     }
 }
 
@@ -1053,40 +1074,41 @@ function openMediaModal(item, type, index = 0, itemsArray = [], skipHistory = fa
 
 
 function closeOverviewModal() {
-    openModals--;
+    document.querySelectorAll('.overview-modal').forEach(modal => modal.classList.remove('show'));
     document.body.style.overflow = 'auto';
     restoreScrollPosition();
 
     // remove all params
-    setQueryParam('overview', null);
-    setQueryParam('media', null);
+    const newParams = new Map([
+        ['slug', null],
+        ['gallery', null]
+    ]);
+    updateURL(newParams);
 }
 // --- Handle Direct Links ---
-function handleDirectLinks(data) {
-    const overviewSlug = getQueryParam('overview');
-    const mediaId = getQueryParam('media');
-    if (!overviewSlug) return;
+function handleDirectLinks() {
+    const params = getQueryParams();
+    const slug = params.get('slug');
+    const galleryId = params.get('gallery');
+    if (!slug) return;
 
-    const gallery = data.find(g => g.nav_title.toLowerCase().replace(/\s+/g,'') === overviewSlug);
-    if (!gallery) return;
+    const product = galleryData.find(p => p.nav_title.toLowerCase().replace(/\s+/g, '') === slug);
+    if (!product) return;
 
-    // scroll to gallery
-    const hero = document.getElementById(overviewSlug);
-    if (hero) hero.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // open overview modal automatically
+    openOverviewModal(product.id, true);
 
-    // open overview modal
-    setTimeout(() => openOverviewModal(gallery.id, true), 200);
-
-    // open media modal if exists
-    if (mediaId) {
-        const allItems = [...(gallery.images || []), ...(gallery.videos || [])];
-        const index = allItems.findIndex(item => (item.id || item.slug || '').toString() === mediaId);
-        if (index >= 0) {
-            const type = gallery.images.includes(allItems[index]) ? 'image' : 'video';
-            setTimeout(() => openMediaModal(allItems[index], type, index, allItems, true), 600);
+    if (galleryId) {
+        const allItems = [...(product.images || []), ...(product.videos || [])];
+        const itemIndex = allItems.findIndex(i => i.id == galleryId);
+        if (itemIndex !== -1) {
+            const item = allItems[itemIndex];
+            const type = product.images.includes(item) ? 'image' : 'video';
+            openMediaModal(item, type, itemIndex, allItems, true);
         }
     }
 }
+
 
 // ---------- browser back/forward ----------
 window.addEventListener('popstate', () => {
