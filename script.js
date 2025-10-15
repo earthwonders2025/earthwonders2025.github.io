@@ -1,20 +1,16 @@
 /* ---------- INITIALIZATION ---------- */
 // ---------- URL PARAM HELPERS ----------
-function getQueryParams() {
-    return new URLSearchParams(window.location.search);
+function setQueryParam(key, value) {
+    const url = new URL(window.location.href);
+    if (value === null || value === undefined) url.searchParams.delete(key);
+    else url.searchParams.set(key, value);
+    history.pushState({}, '', url.toString());
 }
 
-function updateURL(params, replace = false) {
-    const url = new URL(window.location.origin + window.location.pathname);
-    params.forEach((value, key) => {
-        if (value !== null && value !== undefined && value !== '') {
-            url.searchParams.set(key, value);
-        }
-    });
-    const method = replace ? 'replaceState' : 'pushState';
-    history[method]({}, '', url.toString());
+function getQueryParam(key) {
+    const url = new URL(window.location.href);
+    return url.searchParams.get(key);
 }
-
 document.addEventListener('DOMContentLoaded', () => {
     loadFooterContent();
     // renderProducts();
@@ -573,26 +569,15 @@ function openImageModal(item, type, index = 0, itemsArray = [], skipHistory = fa
     if (type === 'image') showCurrentImage();
     else showCurrentVideo();
 
-    // ✅ Build dynamic URL
-    const params = getQueryParams();
-    const slug = params.get('slug'); // keep the overview slug
-    let newParams;
+    // ✅ URL update: gallery slug = base, media id = current item
+    const gallerySlug = item.gallery_slug || currentGalleryItems[0]?.gallery_slug || 'gallery';
+    const mediaId = item.id || index;
+    const baseUrl = `${window.location.origin}${window.location.pathname}`;
+    const newUrl = `${baseUrl}?${gallerySlug}=${mediaId}`;
 
-    if (type === 'image') {
-        newParams = new Map([
-            ['slug', slug],
-            ['gallery', item.id],
-            ['youtubevideo', null]
-        ]);
-    } else {
-        newParams = new Map([
-            ['slug', slug],
-            ['gallery', null],
-            ['youtubevideo', item.id]
-        ]);
+    if (!skipHistory) {
+        history.pushState({ gallery: gallerySlug, media: mediaId }, '', newUrl);
     }
-
-    if (!skipHistory) updateURL(newParams);
 }
 
 
@@ -628,40 +613,32 @@ function closeImageModal() {
         restoreScrollPosition();
     }
 
-    // ✅ Stop video if open
-    const iframe = modalContent.querySelector('iframe');
-    if (iframe) {
-        iframe.src = ''; // stops video playback
-        iframe.remove();
-    }
-
-    // ✅ Remove media params, keep overview
-    const params = getQueryParams();
-    const slug = params.get('slug');
-    const newParams = new Map([
-        ['slug', slug],
-        ['gallery', null],
-        ['youtubevideo', null]
-    ]);
-    updateURL(newParams, true);
+    // ✅ Reset URL to gallery only, no media
+    const gallerySlug = currentGalleryItems[0]?.gallery_slug || '';
+    const baseUrl = `${window.location.origin}${window.location.pathname}`;
+    const newUrl = gallerySlug ? `${baseUrl}?${gallerySlug}` : baseUrl;
+    history.pushState({}, '', newUrl);
 }
 
-
-function showCurrentVideo() { 
-    const videoData = currentGalleryItems[currentItemIndex];
-    let iframe = modalContent.querySelector('iframe');
-
-    if (!iframe) {
-        iframe = document.createElement('iframe');
-        iframe.allow = 'autoplay; encrypted-media; fullscreen';
-        iframe.frameBorder = '0';
-        iframe.width = '100%';
-        iframe.height = '100%';
-        modalContent.appendChild(iframe);
+function showCurrentImage() {
+    const imgData = currentGalleryItems[currentItemIndex];
+    let modalImg = document.getElementById('modal-img');
+    if (!modalImg) {
+        modalImg = document.createElement('img');
+        modalImg.id = 'modal-img';
+        modalContent.appendChild(modalImg);
+        enableDrag(modalImg);
     }
+    modalImg.src = imgData.image_url; // ✅ use url from API
+    modalImg.style.transform = `scale(${scale}) translate(0,0)`;
 
-    iframe.src = `https://www.youtube.com/embed/${videoData.youtube_id}?autoplay=1&rel=0`;
-    modalCaption.textContent = videoData.caption || "";
+    // Update footer fields
+    const h = document.getElementById('modal-heading');
+    const t = document.getElementById('modal-text');
+    const c = document.getElementById('modal-caption');
+    if (h) h.textContent = imgData.heading || '';
+    if (t) t.textContent = imgData.text || '';
+    if (c) c.textContent = imgData.caption || '';
 }
 
 function showCurrentVideo() { 
@@ -702,62 +679,50 @@ function showCurrentVideo() {
         }
 
 
+function updateMediaURL() {
+    const slug = currentGalleryItems[0]?.gallery_slug || 'gallery';
+    const mediaId = currentGalleryItems[currentItemIndex].id || currentItemIndex;
+    const baseUrl = window.location.origin + window.location.pathname;
+    const newUrl = `${baseUrl}?slug=${slug}&media=${mediaId}`;
+    history.replaceState({ slug, media: mediaId }, '', newUrl);
+}
+
 function navigateToPrevItem() {
     if (currentItemIndex > 0) {
         currentItemIndex--;
-        resetMediaView();
-        showCurrentMedia();
-        updateDynamicMediaURL();
+        scale = 1; offsetX = 0; offsetY = 0;
+        currentItemType === 'image' ? showCurrentImage() : showCurrentVideo();
+
+        // ✅ update media param in URL
+        const overview = getQueryParam('overview');
+        const mediaId = currentGalleryItems[currentItemIndex].id;
+        setQueryParam('overview', overview);  // keep overview
+        setQueryParam('media', mediaId);      // update media only
     }
 }
 
 function navigateToNextItem() {
     if (currentItemIndex < currentGalleryItems.length - 1) {
         currentItemIndex++;
-        resetMediaView();
-        showCurrentMedia();
-        updateDynamicMediaURL();
+        scale = 1; offsetX = 0; offsetY = 0;
+        currentItemType === 'image' ? showCurrentImage() : showCurrentVideo();
+
+        // ✅ update media param in URL
+        const overview = getQueryParam('overview');
+        const mediaId = currentGalleryItems[currentItemIndex].id;
+        setQueryParam('overview', overview);  // keep overview
+        setQueryParam('media', mediaId);      // update media only
     }
 }
-
-function resetMediaView() {
-    scale = 1;
-    offsetX = 0;
-    offsetY = 0;
-}
-
-function showCurrentMedia() {
-    currentItemType === 'image' ? showCurrentImage() : showCurrentVideo();
-}
-
-function updateDynamicMediaURL() {
-    const params = getQueryParams();
-    const slug = params.get('slug');
-    const currentItem = currentGalleryItems[currentItemIndex];
-    const newParams = new Map([
-        ['slug', slug],
-        ['gallery', currentItem.id]
-    ]);
-    updateURL(newParams, true); // replace instead of push
-}
-
-
 
 function closeMediaModal() {
     imageModal.classList.remove('show');
     document.body.style.overflow = 'auto';
     restoreScrollPosition();
 
-    // remove only gallery param
-    const params = getQueryParams();
-    const slug = params.get('slug');
-    const newParams = new Map([
-        ['slug', slug],
-        ['gallery', null]
-    ]);
-    updateURL(newParams, true);
+    // remove only media param
+    setQueryParam('media', null);
 }
-
 
 
         function zoomImage(factor) {
@@ -980,28 +945,26 @@ function openOverviewModal(productId, skipHistory = false) {
     const product = galleryData.find(g => g.id === productId);
     if (!product) return;
 
+    if (!skipHistory) {
+        const slug = product.nav_title.toLowerCase().replace(/\s+/g, '');
+        setQueryParam('overview', slug); // only overview
+        setQueryParam('media', null);     // remove media if exists
+    }
+
     const slug = product.nav_title.toLowerCase().replace(/\s+/g, '');
+    const baseUrl = window.location.origin + window.location.pathname;
+    const newUrl = `${baseUrl}?slug=${slug}`;
+    if (!skipHistory) history.pushState({ slug }, '', newUrl);
 
-   if (!skipHistory) {
-    const params = new Map([
-        ['slug', slug],
-        ['gallery', null],
-        ['youtubevideo', null]
-    ]);
-    updateURL(params);
-}
-
-      let overviewModal = document.getElementById(`overview-modal-${product.id}`);
-    if (!overviewModal) {
-        overviewModal = document.createElement('div');
-        overviewModal.id = `overview-modal-${product.id}`;
-        overviewModal.className = 'overview-modal';
-
+  let overviewModal = document.getElementById(`overview-modal-${productId}`);
+  if (!overviewModal) {
+    overviewModal = document.createElement('div');
+    overviewModal.id = `overview-modal-${productId}`;
+    overviewModal.className = 'overview-modal';
 
     // Build modal contents
     let buttonsHTML = '';
     let bodyHTML = '';
-    // before this
 
     if (product.description_text?.trim()) {
       bodyHTML += `
@@ -1060,8 +1023,6 @@ function openOverviewModal(productId, skipHistory = false) {
 
     renderOverviewImages(productId, product.images || []);
     renderOverviewVideos(productId, product.videos || []);
-    overviewModal.classList.add('show');
-    document.body.style.overflow = 'hidden'
   }
 
   overviewModal.classList.add('show');
@@ -1078,83 +1039,61 @@ function openMediaModal(item, type, index = 0, itemsArray = [], skipHistory = fa
     type === 'image' ? showCurrentImage() : showCurrentVideo();
 
     if (!skipHistory) {
-        const params = getQueryParams();
-        const slug = params.get('slug');
-        const galleryId = item.id;
-
-        const newParams = new Map([
-            ['slug', slug],
-            ['gallery', galleryId]
-        ]);
-        updateURL(newParams);
+        const overview = getQueryParam('overview');
+        const mediaId = item.id || index;
+        setQueryParam('overview', overview); // keep overview
+        setQueryParam('media', mediaId);     // set media
     }
 }
 
 
-
-
 function closeOverviewModal() {
-    document.querySelectorAll('.overview-modal').forEach(modal => modal.classList.remove('show'));
+    openModals--;
     document.body.style.overflow = 'auto';
     restoreScrollPosition();
 
     // remove all params
-    const newParams = new Map([
-        ['slug', null],
-        ['gallery', null]
-    ]);
-    updateURL(newParams);
+    setQueryParam('overview', null);
+    setQueryParam('media', null);
 }
 // --- Handle Direct Links ---
-function handleDirectLinks() {
-    const params = getQueryParams();
-    const slug = params.get('slug');
-    const galleryId = params.get('gallery');
-    const youtubeId = params.get('youtubevideo');
+function handleDirectLinks(data) {
+    const overviewSlug = getQueryParam('overview');
+    const mediaId = getQueryParam('media');
+    if (!overviewSlug) return;
 
-    if (!slug) return;
-    const product = galleryData.find(p => p.nav_title.toLowerCase().replace(/\s+/g, '') === slug);
-    if (!product) return;
+    const gallery = data.find(g => g.nav_title.toLowerCase().replace(/\s+/g,'') === overviewSlug);
+    if (!gallery) return;
 
-    openOverviewModal(product.id, true);
+    // scroll to gallery
+    const hero = document.getElementById(overviewSlug);
+    if (hero) hero.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-    if (galleryId) {
-        const item = (product.images || []).find(i => i.id == galleryId);
-        if (item) openImageModal(item, 'image', 0, product.images, true);
-    }
+    // open overview modal
+    setTimeout(() => openOverviewModal(gallery.id, true), 200);
 
-    if (youtubeId) {
-        const item = (product.videos || []).find(v => v.id == youtubeId);
-        if (item) openImageModal(item, 'video', 0, product.videos, true);
+    // open media modal if exists
+    if (mediaId) {
+        const allItems = [...(gallery.images || []), ...(gallery.videos || [])];
+        const index = allItems.findIndex(item => (item.id || item.slug || '').toString() === mediaId);
+        if (index >= 0) {
+            const type = gallery.images.includes(allItems[index]) ? 'image' : 'video';
+            setTimeout(() => openMediaModal(allItems[index], type, index, allItems, true), 600);
+        }
     }
 }
 
 // ---------- browser back/forward ----------
 window.addEventListener('popstate', () => {
-    const params = getQueryParams();
-    const slug = params.get('slug');
-    const galleryId = params.get('gallery');
-    const youtubeId = params.get('youtubevideo');
-
+  const urlParams = new URLSearchParams(window.location.search);
+  const slug = urlParams.get('gallery');
+  if (slug) {
+    const g = galleryData.find(x => x.nav_title.toLowerCase().replace(/\s+/g, '') === slug);
+    if (g) openOverviewModal(g.id, true);
+  } else {
+    document.querySelectorAll('.overview-modal.show').forEach(m => m.remove());
     document.body.style.overflow = 'auto';
-
-    if (!slug) {
-        document.querySelectorAll('.overview-modal').forEach(m => m.remove());
-        return;
-    }
-
-    const product = galleryData.find(g => g.nav_title.toLowerCase().replace(/\s+/g, '') === slug);
-    if (!product) return;
-
-    openOverviewModal(product.id, true);
-
-    if (galleryId) {
-        const img = (product.images || []).find(i => i.id == galleryId);
-        if (img) openImageModal(img, 'image', 0, product.images, true);
-    } else if (youtubeId) {
-        const vid = (product.videos || []).find(v => v.id == youtubeId);
-        if (vid) openImageModal(vid, 'video', 0, product.videos, true);
-    }
+  }
 });
 
 // Images
