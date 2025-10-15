@@ -1018,10 +1018,10 @@ function openOverviewModal(productId, skipHistory = false) {
 function closeOverviewModal(modal) {
     modal.classList.remove('show');
     modal.remove();
+    document.body.style.overflow = 'auto';
     openModals--;
 
     if (openModals <= 0) {
-        document.body.style.overflow = 'auto';
         restoreScrollPosition(); // scroll restored properly even for direct links
     }
 
