@@ -922,9 +922,11 @@ function openOverviewModal(productId, skipHistory = false) {
     const baseUrl = `${window.location.origin}${window.location.pathname}`;
     const newUrl = `${baseUrl}?gallery=${slug}`;
 
-    if (!skipHistory) {
-        history.pushState({ gallery: slug }, '', newUrl); // push only if not skipHistory
-    }
+   if (!skipHistory) {
+    history.pushState({ gallery: slug }, '', newUrl);
+} else {
+    history.replaceState({ gallery: slug }, '', newUrl);
+}
 
     // build & show modal...
     let overviewModal = document.getElementById(`overview-modal-${productId}`);
@@ -1009,18 +1011,23 @@ function closeOverviewModal(modal) {
     openModals--;
 
     if (openModals <= 0) {
-        restoreScrollPosition();       // restore scroll before unlocking
+        restoreScrollPosition();
         document.body.style.overflow = 'auto';
-    }
-
-    // Remove ?gallery from URL if it exists
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.has('gallery')) {
-        history.back();  // Go back to the previous URL
     }
 
     // Remove modal from DOM after animation
     setTimeout(() => modal.remove(), 300);
+
+    // Remove ?gallery from URL only if it exists
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('gallery')) {
+        // Go back only if the previous state exists
+        if (history.state && history.state.gallery) {
+            history.back();
+        } else {
+            history.replaceState({}, '', window.location.pathname);
+        }
+    }
 }
 
 
