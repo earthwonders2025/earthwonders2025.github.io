@@ -1201,16 +1201,42 @@ function openNavLogoOverviewModal(skipHistory = false) {
     overviewModal.id = "overview-modal-navlogo";
     overviewModal.className = "overview-modal";
 
-    const logoText = document.getElementById("navLogo")?.textContent.trim() || "Overview";
+    const logoText = document.getElementById("navLogo")?.textContent.trim() || "EarthWonders";
 
+    // ✅ footer-style structure + static content for now
     overviewModal.innerHTML = `
       <div class="overview-header">
-          <h2>${logoText}</h2>
-          <button class="close-overview">×</button>
+        <h2>${logoText}</h2>
+        <button class="close-overview">×</button>
       </div>
-      <div class="overview-body">
-          <p>Welcome to <strong>${logoText}</strong> — explore breathtaking galleries and the wonders of Earth.</p>
-          <p style="margin-top:1em;">Use the navigation arrows or explore galleries below to begin your journey.</p>
+
+      <div class="overview-body footer-style-body">
+        <section class="footer-section">
+          <h3>About ${logoText}</h3>
+          <p>Discover Earth's most breathtaking landscapes and natural wonders. 
+          ${logoText} is dedicated to showcasing stunning imagery and stories that celebrate our planet’s beauty.</p>
+        </section>
+
+        <section class="footer-section">
+          <h3>Our Mission</h3>
+          <p>To inspire awareness and appreciation for nature through visual storytelling and immersive experiences.</p>
+        </section>
+
+        <section class="footer-section">
+          <h3>Explore More</h3>
+          <ul>
+            <li>🌍 Stunning Galleries</li>
+            <li>🎥 Immersive Videos</li>
+            <li>📸 Behind the Lens</li>
+            <li>🗺️ Travel Stories</li>
+          </ul>
+        </section>
+
+        <section class="footer-section">
+          <h3>Contact Us</h3>
+          <p>Email: <a href="mailto:info@earthwonders.com">info@earthwonders.com</a></p>
+          <p>Follow us on social media for updates and new galleries.</p>
+        </section>
       </div>
     `;
 
@@ -1226,6 +1252,7 @@ function openNavLogoOverviewModal(skipHistory = false) {
   overviewModal.classList.add("show");
   document.body.style.overflow = "hidden";
 }
+
 
 
 function closeNavLogoOverviewModal(modal) {
