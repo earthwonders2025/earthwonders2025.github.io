@@ -913,7 +913,8 @@ modalContent.addEventListener("touchend", handlePinchEnd);
 
 
 // ---------- Modal open/close ----------
-let originalUrl = null; // store original page URL
+
+let overviewOriginalUrl = null; // tracks URL for overview modals separately
 
 function openOverviewModal(productId, skipHistory = false) {
     const product = galleryData.find(g => g.id === productId);
@@ -923,16 +924,15 @@ function openOverviewModal(productId, skipHistory = false) {
     const baseUrl = `${window.location.origin}${window.location.pathname}`;
     const newUrl = `${baseUrl}?gallery=${slug}`;
 
-    if (!originalUrl) originalUrl = window.location.href;
+    // Only set original URL if this is the first overview modal
+    if (!overviewOriginalUrl) overviewOriginalUrl = window.location.href;
 
-    // Update browser history
     if (!skipHistory) {
         history.pushState({ gallery: slug }, '', newUrl);
     } else {
         history.replaceState({ gallery: slug }, '', newUrl);
     }
 
-    // Check if modal already exists
     let overviewModal = document.getElementById(`overview-modal-${productId}`);
     if (!overviewModal) {
         overviewModal = document.createElement('div');
@@ -1005,11 +1005,9 @@ function openOverviewModal(productId, skipHistory = false) {
         renderOverviewVideos(productId, product.videos || []);
     }
 
-    // Show modal
     overviewModal.classList.add('show');
     document.body.style.overflow = 'hidden';
 
-    // Update meta & structured data
     updateMetaTags(product);
     addGalleryStructuredData(product);
 }
@@ -1023,15 +1021,15 @@ function closeOverviewModal(modal) {
         document.body.style.overflow = 'auto';
     }
 
-    // Remove modal after animation
     setTimeout(() => modal.remove(), 300);
 
-    // Restore original URL
-    if (originalUrl) {
-        history.replaceState({}, '', originalUrl);
-        originalUrl = null;
+    // Restore URL only for overview modal
+    if (overviewOriginalUrl) {
+        history.replaceState({}, '', overviewOriginalUrl);
+        overviewOriginalUrl = null;
     }
 }
+
 
 
 
