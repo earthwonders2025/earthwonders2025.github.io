@@ -913,6 +913,8 @@ modalContent.addEventListener("touchend", handlePinchEnd);
 
 
 // ---------- Modal open/close ----------
+let originalUrl = null; // store original page URL
+
 function openOverviewModal(productId, skipHistory = false) {
     const product = galleryData.find(g => g.id === productId);
     if (!product) return;
@@ -923,86 +925,91 @@ function openOverviewModal(productId, skipHistory = false) {
 
     if (!originalUrl) originalUrl = window.location.href;
 
+    // Update browser history
     if (!skipHistory) {
         history.pushState({ gallery: slug }, '', newUrl);
     } else {
         history.replaceState({ gallery: slug }, '', newUrl);
     }
 
-    // build & show modal...
+    // Check if modal already exists
     let overviewModal = document.getElementById(`overview-modal-${productId}`);
     if (!overviewModal) {
-    overviewModal = document.createElement('div');
-    overviewModal.id = `overview-modal-${productId}`;
-    overviewModal.className = 'overview-modal';
+        overviewModal = document.createElement('div');
+        overviewModal.id = `overview-modal-${productId}`;
+        overviewModal.className = 'overview-modal';
 
-    // Build modal contents
-    let buttonsHTML = '';
-    let bodyHTML = '';
+        // Build modal content
+        let buttonsHTML = '';
+        let bodyHTML = '';
 
-    if (product.description_text?.trim()) {
-      bodyHTML += `
-        <div class="overview-content active" id="overview-text-${productId}">
-          <p>${product.description_text}</p>
-        </div>`;
-      buttonsHTML += `<button class="active" data-target="overview-text-${productId}">Overview</button>`;
+        if (product.description_text?.trim()) {
+            bodyHTML += `
+                <div class="overview-content active" id="overview-text-${productId}">
+                    <p>${product.description_text}</p>
+                </div>`;
+            buttonsHTML += `<button class="active" data-target="overview-text-${productId}">Overview</button>`;
+        }
+
+        if (product.images?.length) {
+            bodyHTML += `
+                <div class="overview-content" id="overview-images-${productId}">
+                    <div class="images" id="overview-images-container-${productId}"></div>
+                    <div class="pagination" id="overview-images-pagination-${productId}"></div>
+                </div>`;
+            const cls = buttonsHTML ? '' : 'active';
+            buttonsHTML += `<button class="${cls}" data-target="overview-images-${productId}">Images</button>`;
+        }
+
+        if (product.videos?.length) {
+            bodyHTML += `
+                <div class="overview-content" id="overview-videos-${productId}">
+                    <div class="images" id="overview-videos-container-${productId}"></div>
+                    <div class="pagination" id="overview-videos-pagination-${productId}"></div>
+                </div>`;
+            const cls = buttonsHTML ? '' : 'active';
+            buttonsHTML += `<button class="${cls}" data-target="overview-videos-${productId}">Videos</button>`;
+        }
+
+        overviewModal.innerHTML = `
+            <div class="overview-header">
+                <h2>${product.description_title || 'Details'}</h2>
+                <button class="close-overview">×</button>
+            </div>
+            <div class="overview-body">
+                ${bodyHTML || "<p style='text-align:center;'>No details available.</p>"}
+            </div>
+            <div class="overview-pagination">${buttonsHTML}</div>
+        `;
+
+        document.body.appendChild(overviewModal);
+
+        // Close modal events
+        overviewModal.querySelector('.close-overview').addEventListener('click', () => closeOverviewModal(overviewModal));
+        overviewModal.addEventListener('click', e => { 
+            if (e.target === overviewModal) closeOverviewModal(overviewModal); 
+        });
+
+        // Tab switching
+        overviewModal.querySelectorAll('.overview-pagination button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                overviewModal.querySelectorAll('.overview-pagination button').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                overviewModal.querySelectorAll('.overview-content').forEach(c => c.classList.remove('active'));
+                document.getElementById(btn.dataset.target).classList.add('active');
+            });
+        });
+
+        // Render images/videos
+        renderOverviewImages(productId, product.images || []);
+        renderOverviewVideos(productId, product.videos || []);
     }
 
-    if (product.images?.length) {
-      bodyHTML += `
-        <div class="overview-content" id="overview-images-${productId}">
-          <div class="images" id="overview-images-container-${productId}"></div>
-          <div class="pagination" id="overview-images-pagination-${productId}"></div>
-        </div>`;
-      const cls = buttonsHTML ? '' : 'active';
-      buttonsHTML += `<button class="${cls}" data-target="overview-images-${productId}">Images</button>`;
-    }
-
-    if (product.videos?.length) {
-      bodyHTML += `
-        <div class="overview-content" id="overview-videos-${productId}">
-          <div class="images" id="overview-videos-container-${productId}"></div>
-          <div class="pagination" id="overview-videos-pagination-${productId}"></div>
-        </div>`;
-      const cls = buttonsHTML ? '' : 'active';
-      buttonsHTML += `<button class="${cls}" data-target="overview-videos-${productId}">Videos</button>`;
-    }
-
-    overviewModal.innerHTML = `
-      <div class="overview-header">
-        <h2>${product.description_title || 'Details'}</h2>
-        <button class="close-overview">×</button>
-      </div>
-      <div class="overview-body">
-        ${bodyHTML || "<p style='text-align:center;'>No details available.</p>"}
-      </div>
-      <div class="overview-pagination">${buttonsHTML}</div>
-    `;
-
-    document.body.appendChild(overviewModal);
-
-    // close modal
-overviewModal.querySelector('.close-overview').addEventListener('click', () => closeOverviewModal(overviewModal));
-overviewModal.addEventListener('click', e => { 
-    if (e.target === overviewModal) closeOverviewModal(overviewModal); 
-});
-    // tab switching
-    overviewModal.querySelectorAll('.overview-pagination button').forEach(btn => {
-      btn.addEventListener('click', () => {
-        overviewModal.querySelectorAll('.overview-pagination button').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        overviewModal.querySelectorAll('.overview-content').forEach(c => c.classList.remove('active'));
-        document.getElementById(btn.dataset.target).classList.add('active');
-      });
-    });
-
-    renderOverviewImages(productId, product.images || []);
-    renderOverviewVideos(productId, product.videos || []);
-  }
-
+    // Show modal
     overviewModal.classList.add('show');
     document.body.style.overflow = 'hidden';
 
+    // Update meta & structured data
     updateMetaTags(product);
     addGalleryStructuredData(product);
 }
@@ -1016,14 +1023,15 @@ function closeOverviewModal(modal) {
         document.body.style.overflow = 'auto';
     }
 
+    // Remove modal after animation
     setTimeout(() => modal.remove(), 300);
 
+    // Restore original URL
     if (originalUrl) {
         history.replaceState({}, '', originalUrl);
-        originalUrl = null; // reset
+        originalUrl = null;
     }
 }
-
 
 
 
