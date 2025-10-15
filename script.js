@@ -101,6 +101,7 @@ async function fetchGalleries() {
         galleryData = data; // store globally
         renderGalleries(data);
         setupNavigation(data);
+        handleDirectGalleryLinks(galleryData)
         // --- handle direct links from ?gallery=slug or /gallery/slug ---
 const urlParams = new URLSearchParams(window.location.search);
 let slug = urlParams.get('gallery');
@@ -929,11 +930,12 @@ function openOverviewModal(productId, skipHistory = false) {
     // Save original URL only at first overview modal
     if (!overviewOriginalUrl) overviewOriginalUrl = window.location.href;
 
-    if (!skipHistory) {
-        history.pushState({ gallery: slug }, '', newUrl);
-    } else {
-        history.replaceState({ gallery: slug }, '', newUrl);
-    }
+  if (skipHistory) {
+    history.replaceState({}, '', baseUrl); // base page into history
+    history.pushState({ gallery: slug }, '', newUrl); // then gallery state
+} else {
+    history.pushState({ gallery: slug }, '', newUrl);
+}
 
     let overviewModal = document.getElementById(`overview-modal-${productId}`);
     if (!overviewModal) {
@@ -1019,22 +1021,29 @@ function closeOverviewModal(modal) {
 // ---------- handle direct links ----------
 function handleDirectGalleryLinks(data) {
     const urlParams = new URLSearchParams(window.location.search);
-    const slug = urlParams.get('gallery');
+    let slug = urlParams.get('gallery');
+
+    // also check /gallery/slug
+    if (!slug) {
+        const match = window.location.pathname.match(/\/gallery\/([^/]+)/);
+        if (match) slug = match[1];
+    }
+
     if (!slug) return;
 
     const gallery = data.find(g => g.nav_title.toLowerCase().replace(/\s+/g, '') === slug);
     if (!gallery) return;
 
-    const hero = document.getElementById(gallery.nav_title.toLowerCase().replace(/\s+/g, '-'));
+    const heroId = gallery.nav_title.toLowerCase().replace(/\s+/g, '-');
+    const hero = document.getElementById(heroId);
     if (hero) hero.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
+    // Open overview modal from direct link
     setTimeout(() => openOverviewModal(gallery.id, true), 600);
-    updateMetaTags(gallery);         // ✅ Update title/description immediately
-    addGalleryStructuredData(gallery);
 }
 
 // call after setupNavigation(data)
-handleDirectGalleryLinks(data);
+// handleDirectGalleryLinks(data);
 
 // ---------- browser back/forward ----------
 window.addEventListener('popstate', () => {
