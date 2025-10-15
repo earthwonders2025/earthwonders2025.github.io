@@ -1018,17 +1018,11 @@ function closeOverviewModal(modal) {
     // Remove modal from DOM after animation
     setTimeout(() => modal.remove(), 300);
 
-    // Remove ?gallery from URL only if it exists
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.has('gallery')) {
-        // Go back only if the previous state exists
-        if (history.state && history.state.gallery) {
-            history.back();
-        } else {
-            history.replaceState({}, '', window.location.pathname);
-        }
-    }
+    // ✅ Always remove ?gallery from URL
+    const baseUrl = window.location.origin + window.location.pathname;
+    history.replaceState({}, '', baseUrl);
 }
+
 
 
 // ---------- handle direct links ----------
