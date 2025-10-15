@@ -1179,9 +1179,13 @@ function renderOverviewVideos(productId, videos) {
     
     render();
 }
+let navLogoOpen = false; // track if NavLogo is open
+
+// ---------- Open NavLogo Overview ----------
 function openNavLogoOverviewModal(skipHistory = false) {
     if (openModals === 0) saveScrollPosition();
     openModals++;
+    navLogoOpen = true; // mark NavLogo as open
 
     const baseUrl = `${window.location.origin}${window.location.pathname}`;
     const navLogoSlug = "navlogo";
@@ -1204,7 +1208,6 @@ function openNavLogoOverviewModal(skipHistory = false) {
 
         const logoText = document.getElementById("navLogo")?.textContent.trim() || "Gallery";
 
-        // Build dynamic gallery list
         let galleryHTML = "<ul>";
         galleryData.forEach(item => {
             galleryHTML += `<li>
@@ -1218,7 +1221,6 @@ function openNavLogoOverviewModal(skipHistory = false) {
                 <h2>${logoText}</h2>
                 <button class="close-overview">×</button>
             </div>
-
             <div class="overview-body footer-like">
                 <section class="footer-block">
                     <h3>Gallery Items</h3>
@@ -1230,9 +1232,9 @@ function openNavLogoOverviewModal(skipHistory = false) {
         document.body.appendChild(overviewModal);
 
         // Close NavLogo modal
-        overviewModal.querySelector(".close-overview").addEventListener("click", () => closeOverviewModal(overviewModal));
+        overviewModal.querySelector(".close-overview").addEventListener("click", () => closeNavLogoOverviewModal());
         overviewModal.addEventListener("click", e => {
-            if (e.target === overviewModal) closeOverviewModal(overviewModal);
+            if (e.target === overviewModal) closeNavLogoOverviewModal();
         });
     }
 
@@ -1245,44 +1247,45 @@ function openGalleryFromNavLogo(productId) {
     const baseUrl = `${window.location.origin}${window.location.pathname}`;
     const gallery = galleryData.find(g => g.id === productId);
     if (!gallery) return;
-    const slug = gallery.nav_title.toLowerCase().replace(/\s+/g, '');
-    const newUrl = `${baseUrl}?gallery=${slug}`;
-
-    // Save current state of NavLogo modal
-    const navLogoModal = document.getElementById("overview-modal-navlogo");
 
     openOverviewModal(productId); // normal gallery modal
 
-    // Hook close specifically for this gallery modal
+    // Override gallery modal close
     const galleryModal = document.getElementById(`overview-modal-${productId}`);
     if (!galleryModal) return;
 
-    const originalClose = galleryModal.querySelector(".close-overview").onclick;
     galleryModal.querySelector(".close-overview").onclick = function() {
-        // Close gallery modal
         closeOverviewModal(galleryModal);
 
-        // Restore NavLogo URL without closing NavLogo modal
-        if (navLogoModal) {
+        // If NavLogo modal is still open, restore its URL
+        if (navLogoOpen) {
             history.replaceState({ gallery: "navlogo" }, "", `${baseUrl}?gallery=navlogo`);
         }
     };
 }
 
+// ---------- Close NavLogo ----------
+function closeNavLogoOverviewModal() {
+    const navLogoModal = document.getElementById("overview-modal-navlogo");
+    if (!navLogoModal) return;
 
-
-function closeNavLogoOverviewModal(modal) {
-    modal.classList.remove('show');
-    modal.remove();
+    navLogoModal.classList.remove("show");
+    navLogoModal.remove();
+    navLogoOpen = false;
     openModals--;
+
     if (openModals <= 0) {
-        document.body.style.overflow = 'auto';
+        document.body.style.overflow = "auto";
         restoreScrollPosition();
     }
+
+    // Only clear URL if no gallery is open inside NavLogo
+    const anyGalleryOpen = document.querySelector(".overview-modal[id^='overview-modal-']") !== null;
+    if (!anyGalleryOpen && overviewOriginalUrl) {
+        history.replaceState({}, "", overviewOriginalUrl);
+        overviewOriginalUrl = null;
+    }
 }
-
-
-
 
     // 
     // 
