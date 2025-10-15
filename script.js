@@ -913,20 +913,21 @@ modalContent.addEventListener("touchend", handlePinchEnd);
 
 
 // ---------- Modal open/close ----------
-let overviewOriginalUrl = null;
-let openOverviewModals = 0; // Track multiple overview modals
+let overviewOriginalUrl = null; // save the URL before any overview modal opens
 
 function openOverviewModal(productId, skipHistory = false) {
+    saveScrollPosition();
+    openModals++;
+
     const product = galleryData.find(g => g.id === productId);
     if (!product) return;
 
-    const slug = product.nav_title.toLowerCase().replace(/\s+/g,'');
+    const slug = product.nav_title.toLowerCase().replace(/\s+/g, '');
     const baseUrl = `${window.location.origin}${window.location.pathname}`;
     const newUrl = `${baseUrl}?gallery=${slug}`;
 
-    // Save original URL only at first open
-    if (openOverviewModals === 0) overviewOriginalUrl = window.location.href;
-    openOverviewModals++;
+    // Save original URL only at first overview modal
+    if (!overviewOriginalUrl) overviewOriginalUrl = window.location.href;
 
     if (!skipHistory) {
         history.pushState({ gallery: slug }, '', newUrl);
@@ -939,56 +940,44 @@ function openOverviewModal(productId, skipHistory = false) {
         overviewModal = document.createElement('div');
         overviewModal.id = `overview-modal-${productId}`;
         overviewModal.className = 'overview-modal';
-        document.body.appendChild(overviewModal);
 
-        // Build modal content
+        // Build modal contents
         let buttonsHTML = '';
         let bodyHTML = '';
 
         if (product.description_text?.trim()) {
-            bodyHTML += `
-            <div class="overview-content active" id="overview-text-${productId}">
-                <p>${product.description_text}</p>
-            </div>`;
+            bodyHTML += `<div class="overview-content active" id="overview-text-${productId}"><p>${product.description_text}</p></div>`;
             buttonsHTML += `<button class="active" data-target="overview-text-${productId}">Overview</button>`;
         }
 
         if (product.images?.length) {
-            bodyHTML += `
-            <div class="overview-content" id="overview-images-${productId}">
-                <div class="images" id="overview-images-container-${productId}"></div>
-                <div class="pagination" id="overview-images-pagination-${productId}"></div>
-            </div>`;
+            bodyHTML += `<div class="overview-content" id="overview-images-${productId}"><div class="images" id="overview-images-container-${productId}"></div><div class="pagination" id="overview-images-pagination-${productId}"></div></div>`;
             const cls = buttonsHTML ? '' : 'active';
             buttonsHTML += `<button class="${cls}" data-target="overview-images-${productId}">Images</button>`;
         }
 
         if (product.videos?.length) {
-            bodyHTML += `
-            <div class="overview-content" id="overview-videos-${productId}">
-                <div class="images" id="overview-videos-container-${productId}"></div>
-                <div class="pagination" id="overview-videos-pagination-${productId}"></div>
-            </div>`;
+            bodyHTML += `<div class="overview-content" id="overview-videos-${productId}"><div class="images" id="overview-videos-container-${productId}"></div><div class="pagination" id="overview-videos-pagination-${productId}"></div></div>`;
             const cls = buttonsHTML ? '' : 'active';
             buttonsHTML += `<button class="${cls}" data-target="overview-videos-${productId}">Videos</button>`;
         }
 
         overviewModal.innerHTML = `
-        <div class="overview-header">
-            <h2>${product.description_title || 'Details'}</h2>
-            <button class="close-overview">×</button>
-        </div>
-        <div class="overview-body">
-            ${bodyHTML || "<p style='text-align:center;'>No details available.</p>"}
-        </div>
-        <div class="overview-pagination">${buttonsHTML}</div>
+            <div class="overview-header">
+                <h2>${product.description_title || 'Details'}</h2>
+                <button class="close-overview">×</button>
+            </div>
+            <div class="overview-body">
+                ${bodyHTML || "<p style='text-align:center;'>No details available.</p>"}
+            </div>
+            <div class="overview-pagination">${buttonsHTML}</div>
         `;
 
-        // Close modal buttons
+        document.body.appendChild(overviewModal);
+
+        // Close modal
         overviewModal.querySelector('.close-overview').addEventListener('click', () => closeOverviewModal(overviewModal));
-        overviewModal.addEventListener('click', e => {
-            if (e.target === overviewModal) closeOverviewModal(overviewModal);
-        });
+        overviewModal.addEventListener('click', e => { if (e.target === overviewModal) closeOverviewModal(overviewModal); });
 
         // Tab switching
         overviewModal.querySelectorAll('.overview-pagination button').forEach(btn => {
@@ -1006,27 +995,23 @@ function openOverviewModal(productId, skipHistory = false) {
 
     overviewModal.classList.add('show');
     document.body.style.overflow = 'hidden';
-
-    updateMetaTags(product);
-    addGalleryStructuredData(product);
 }
 
 function closeOverviewModal(modal) {
     modal.classList.remove('show');
-    openOverviewModals--;
+    modal.remove();
+    openModals--;
 
-    if (openOverviewModals <= 0) {
+    if (openModals <= 0) {
         restoreScrollPosition();
         document.body.style.overflow = 'auto';
-        // Restore original URL if no other overview modal is open
+
+        // Restore original URL only if we have it
         if (overviewOriginalUrl) {
             history.replaceState({}, '', overviewOriginalUrl);
             overviewOriginalUrl = null;
         }
     }
-
-    // Remove modal from DOM after animation
-    setTimeout(() => modal.remove(), 300);
 }
 
 
