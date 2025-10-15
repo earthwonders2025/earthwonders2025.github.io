@@ -889,23 +889,23 @@ modalContent.addEventListener("touchend", handlePinchEnd);
 // ---------- Modal open/close ----------
 // ---------- Modal open/close ----------
 function openOverviewModal(productId, skipHistory = false) {
-    saveScrollPosition();
-    openModals++;
+  saveScrollPosition();
+  openModals++;
 
-    const product = galleryData.find(g => g.id === productId);
-    if (!product) return;
+  const product = galleryData.find(g => g.id === productId);
+  if (!product) return;
 
-    const slug = product.nav_title.toLowerCase().replace(/\s+/g, '');
-    const baseUrl = `${window.location.origin}${window.location.pathname}`;
-    const newUrl = `${baseUrl}?${slug}`; // ✅ simplified query
+  const slug = product.nav_title.toLowerCase().replace(/\s+/g, '');
+  const baseUrl = `${window.location.origin}${window.location.pathname}`;
+  const newUrl = `${baseUrl}?gallery=${slug}`;
 
-    // If opened from direct link
-    if (skipHistory) {
-        history.replaceState({}, '', baseUrl); // base page first
-        history.pushState({ gallery: slug }, '', newUrl);
-    } else {
-        history.pushState({ gallery: slug }, '', newUrl);
-    }
+  // 👇 if opening from direct link, make sure base page is in history
+  if (skipHistory) {
+    history.replaceState({}, '', baseUrl);
+    history.pushState({ gallery: slug }, '', newUrl);
+  } else {
+    history.pushState({ gallery: slug }, '', newUrl);
+  }
 
   let overviewModal = document.getElementById(`overview-modal-${productId}`);
   if (!overviewModal) {
@@ -986,26 +986,26 @@ function closeOverviewModal(modal) {
     openModals--;
 
     if (openModals <= 0) {
-        restoreScrollPosition();
+        restoreScrollPosition();          // restore BEFORE unlocking scroll
         document.body.style.overflow = 'auto';
     }
 
-    // Reset URL to base
+    // Update URL last
     history.pushState({}, '', `${window.location.origin}${window.location.pathname}`);
 }
 
 // ---------- handle direct links ----------
 function handleDirectGalleryLinks(data) {
-    const slugParam = window.location.search.substring(1); // takes everything after ?
-    if (!slugParam) return;
+  const urlParams = new URLSearchParams(window.location.search);
+  const slug = urlParams.get('gallery');
+  if (!slug) return;
 
-    const gallery = data.find(g => g.nav_title.toLowerCase().replace(/\s+/g, '') === slugParam);
-    if (!gallery) return;
+  const gallery = data.find(g => g.nav_title.toLowerCase().replace(/\s+/g, '') === slug);
+  if (!gallery) return;
 
-    const hero = document.getElementById(slugParam);
-    if (hero) hero.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-    setTimeout(() => openOverviewModal(gallery.id, true), 600);
+  const hero = document.getElementById(gallery.nav_title.toLowerCase().replace(/\s+/g, '-'));
+  if (hero) hero.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  setTimeout(() => openOverviewModal(gallery.id, true), 600);
 }
 
 // call after setupNavigation(data)
