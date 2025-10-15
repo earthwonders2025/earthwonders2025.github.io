@@ -1153,7 +1153,7 @@ function renderOverviewVideos(productId, videos) {
     render();
 }
 
-// ---------- NavLogo Overview with Gallery Table ----------
+// ---------- NavLogo Overview with Hero Images and Text ----------
 let currentGalleryInNavLogo = null; // track if a gallery is open inside NavLogo
 let navLogoCurrentPage = 1;
 const navLogoItemsPerPage = 6;
@@ -1209,7 +1209,7 @@ function openNavLogoOverviewModal(skipHistory = false) {
     document.body.style.overflow = "hidden";
 }
 
-// ---------- Render Table-Like Gallery with Pagination ----------
+// ---------- Render Table-Like Gallery with Hero Images ----------
 function renderNavLogoGalleryPage(page = 1) {
     const container = document.getElementById("navlogo-gallery-container");
     const paginationContainer = document.getElementById("navlogo-gallery-pagination");
@@ -1221,12 +1221,16 @@ function renderNavLogoGalleryPage(page = 1) {
 
     let html = '<div class="gallery-table">';
     pageItems.forEach(item => {
+        // Use hero image if exists
+        const heroImage = document.getElementById(item.nav_title.toLowerCase().replace(/\s+/g, '-'))?.querySelector('img')?.src || item.images?.[0] || '';
+        const heroText = document.getElementById(item.nav_title.toLowerCase().replace(/\s+/g, '-'))?.querySelector('.hero-text')?.textContent || item.short_desc || '';
+        
         html += `
             <div class="gallery-item">
-                <img src="${item.images?.[0] || ''}" alt="${item.nav_title}" />
+                <img src="${heroImage}" alt="${item.nav_title}" />
                 <div class="gallery-info">
                     <strong>${item.nav_title}</strong>
-                    <p>${item.short_desc || ''}</p>
+                    <p>${heroText}</p>
                     <button onclick="openGalleryFromNavLogo(${item.id})">View</button>
                 </div>
             </div>
@@ -1256,9 +1260,8 @@ function openGalleryFromNavLogo(productId) {
     const baseUrl = `${window.location.origin}${window.location.pathname}`;
     const gallery = galleryData.find(g => g.id === productId);
     if (!gallery) return;
-    const slug = gallery.nav_title.toLowerCase().replace(/\s+/g, '');
-    const newUrl = `${baseUrl}?gallery=${slug}`;
 
+    const slug = gallery.nav_title.toLowerCase().replace(/\s+/g, '');
     const navLogoModal = document.getElementById("overview-modal-navlogo");
 
     openOverviewModal(productId); // normal gallery modal
@@ -1273,9 +1276,10 @@ function openGalleryFromNavLogo(productId) {
         closeOverviewModal(galleryModal);
         currentGalleryInNavLogo = null;
 
-        // Restore NavLogo URL
+        // Restore NavLogo URL and keep modal open
         if (navLogoModal) {
             history.replaceState({ gallery: "navlogo" }, "", `${baseUrl}?gallery=navlogo`);
+            document.body.style.overflow = "hidden"; // keep body scroll hidden
         }
     };
 }
@@ -1299,7 +1303,6 @@ function closeNavLogoOverviewModal() {
         history.replaceState({}, "", baseUrl);
     }
 }
-
 
     // 
     // 
