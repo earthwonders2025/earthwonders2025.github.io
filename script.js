@@ -7,14 +7,13 @@ document.addEventListener('DOMContentLoaded', () => {
     setupEventListeners();
     setupParallaxEffect();
     // setupNavigation();
-     // 🔹 Setup NavLogo click to open Overview Modal
-    const navLogo = document.getElementById('navLogo');
-    if (navLogo) {
-        navLogo.addEventListener('click', () => {
-            const logoText = navLogo.textContent.trim() || 'Overview';
-            openNavLogoOverviewModal(logoText);
-        });
-    }
+  // 🔹 navLogo click -> open overview modal using unified system
+  const navLogo = document.getElementById("navLogo");
+  if (navLogo) {
+    navLogo.addEventListener("click", () => {
+      openNavLogoOverviewModal(); // defined below
+    });
+  }
 });
 function updateMeta(title, description) {
   document.title = title;
@@ -1042,49 +1041,58 @@ function closeOverviewModal(modal) {
 
 // ---------- handle direct links ----------
 function handleDirectGalleryLinks(data) {
-    const urlParams = new URLSearchParams(window.location.search);
-    let slug = urlParams.get('gallery');
+  const urlParams = new URLSearchParams(window.location.search);
+  let slug = urlParams.get("gallery");
 
-    // also check /gallery/slug
-    if (!slug) {
-        const match = window.location.pathname.match(/\/gallery\/([^/]+)/);
-        if (match) slug = match[1];
-    }
+  if (!slug) {
+    const match = window.location.pathname.match(/\/gallery\/([^/]+)/);
+    if (match) slug = match[1];
+  }
 
-    if (!slug) return;
+  if (!slug) return;
 
-    const gallery = data.find(g => g.nav_title.toLowerCase().replace(/\s+/g, '') === slug);
-    if (!gallery) return;
+  if (slug === "navlogo") {
+    setTimeout(() => openNavLogoOverviewModal(true), 400);
+    return;
+  }
 
-    const heroId = gallery.nav_title.toLowerCase().replace(/\s+/g, '-');
-    const hero = document.getElementById(heroId);
-    if (hero) hero.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  const gallery = data.find(g => g.nav_title.toLowerCase().replace(/\s+/g, "") === slug);
+  if (!gallery) return;
 
-    // Open overview modal from direct link
-    setTimeout(() => openOverviewModal(gallery.id, true), 600);
+  const heroId = gallery.nav_title.toLowerCase().replace(/\s+/g, "-");
+  const hero = document.getElementById(heroId);
+  if (hero) hero.scrollIntoView({ behavior: "smooth", block: "center" });
+
+  setTimeout(() => openOverviewModal(gallery.id, true), 600);
 }
+
 
 // call after setupNavigation(data)
 // handleDirectGalleryLinks(data);
 
 // ---------- browser back/forward ----------
-window.addEventListener('popstate', () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const slug = urlParams.get('gallery');
+window.addEventListener("popstate", () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const slug = urlParams.get("gallery");
 
-    if (slug) {
-        const g = galleryData.find(x => x.nav_title.toLowerCase().replace(/\s+/g, '') === slug);
-        if (g) openOverviewModal(g.id, true); // skipHistory = true
+  if (slug) {
+    if (slug === "navlogo") {
+      openNavLogoOverviewModal(true); // same skipHistory behavior
     } else {
-        // no gallery → close all overview modals
-        document.querySelectorAll('.overview-modal.show').forEach(m => {
-            m.classList.remove('show');
-            m.remove();
-        });
-        document.body.style.overflow = 'auto';
-        restoreScrollPosition();
+      const g = galleryData.find(x => x.nav_title.toLowerCase().replace(/\s+/g, "") === slug);
+      if (g) openOverviewModal(g.id, true);
     }
+  } else {
+    // no gallery → close all overview modals
+    document.querySelectorAll(".overview-modal.show").forEach(m => {
+      m.classList.remove("show");
+      m.remove();
+    });
+    document.body.style.overflow = "auto";
+    restoreScrollPosition();
+  }
 });
+
 
 
 // Images
@@ -1171,36 +1179,54 @@ function renderOverviewVideos(productId, videos) {
     
     render();
 }
-function openNavLogoOverviewModal(logoText) {
-    saveScrollPosition();
-    openModals++;
+function openNavLogoOverviewModal(skipHistory = false) {
+  if (openModals === 0) saveScrollPosition();
+  openModals++;
 
-    // Create modal element
-    let modal = document.getElementById('navlogo-overview-modal');
-    if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'navlogo-overview-modal';
-        modal.className = 'overview-modal';
-        modal.innerHTML = `
-            <div class="overview-header">
-                <h2>${logoText}</h2>
-                <button class="close-overview">×</button>
-            </div>
-            <div class="overview-body">
-                <p>Welcome to <strong>${logoText}</strong> — explore our galleries and stories that capture the wonders of Earth.</p>
-            </div>
-        `;
-        document.body.appendChild(modal);
-    }
+  const baseUrl = `${window.location.origin}${window.location.pathname}`;
+  const newUrl = `${baseUrl}?gallery=navlogo`;
 
-    // Show modal
-    modal.classList.add('show');
-    document.body.style.overflow = 'hidden';
+  if (!overviewOriginalUrl) overviewOriginalUrl = baseUrl;
 
-    // Close behavior
-    modal.querySelector('.close-overview').addEventListener('click', () => closeNavLogoOverviewModal(modal));
-    modal.addEventListener('click', e => { if (e.target === modal) closeNavLogoOverviewModal(modal); });
+  if (!skipHistory) {
+    history.pushState({ gallery: "navlogo" }, "", newUrl);
+  } else {
+    history.replaceState({}, "", baseUrl);
+    history.pushState({ gallery: "navlogo" }, "", newUrl);
+  }
+
+  let overviewModal = document.getElementById("overview-modal-navlogo");
+  if (!overviewModal) {
+    overviewModal = document.createElement("div");
+    overviewModal.id = "overview-modal-navlogo";
+    overviewModal.className = "overview-modal";
+
+    const logoText = document.getElementById("navLogo")?.textContent.trim() || "Overview";
+
+    overviewModal.innerHTML = `
+      <div class="overview-header">
+          <h2>${logoText}</h2>
+          <button class="close-overview">×</button>
+      </div>
+      <div class="overview-body">
+          <p>Welcome to <strong>${logoText}</strong> — explore breathtaking galleries and the wonders of Earth.</p>
+          <p style="margin-top:1em;">Use the navigation arrows or explore galleries below to begin your journey.</p>
+      </div>
+    `;
+
+    document.body.appendChild(overviewModal);
+
+    // Close modal
+    overviewModal.querySelector(".close-overview").addEventListener("click", () => closeOverviewModal(overviewModal));
+    overviewModal.addEventListener("click", e => {
+      if (e.target === overviewModal) closeOverviewModal(overviewModal);
+    });
+  }
+
+  overviewModal.classList.add("show");
+  document.body.style.overflow = "hidden";
 }
+
 
 function closeNavLogoOverviewModal(modal) {
     modal.classList.remove('show');
