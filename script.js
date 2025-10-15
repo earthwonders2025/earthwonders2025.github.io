@@ -7,6 +7,14 @@ document.addEventListener('DOMContentLoaded', () => {
     setupEventListeners();
     setupParallaxEffect();
     // setupNavigation();
+     // 🔹 Setup NavLogo click to open Overview Modal
+    const navLogo = document.getElementById('navLogo');
+    if (navLogo) {
+        navLogo.addEventListener('click', () => {
+            const logoText = navLogo.textContent.trim() || 'Overview';
+            openNavLogoOverviewModal(logoText);
+        });
+    }
 });
 function updateMeta(title, description) {
   document.title = title;
@@ -1163,6 +1171,47 @@ function renderOverviewVideos(productId, videos) {
     
     render();
 }
+function openNavLogoOverviewModal(logoText) {
+    saveScrollPosition();
+    openModals++;
+
+    // Create modal element
+    let modal = document.getElementById('navlogo-overview-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'navlogo-overview-modal';
+        modal.className = 'overview-modal';
+        modal.innerHTML = `
+            <div class="overview-header">
+                <h2>${logoText}</h2>
+                <button class="close-overview">×</button>
+            </div>
+            <div class="overview-body">
+                <p>Welcome to <strong>${logoText}</strong> — explore our galleries and stories that capture the wonders of Earth.</p>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+
+    // Show modal
+    modal.classList.add('show');
+    document.body.style.overflow = 'hidden';
+
+    // Close behavior
+    modal.querySelector('.close-overview').addEventListener('click', () => closeNavLogoOverviewModal(modal));
+    modal.addEventListener('click', e => { if (e.target === modal) closeNavLogoOverviewModal(modal); });
+}
+
+function closeNavLogoOverviewModal(modal) {
+    modal.classList.remove('show');
+    modal.remove();
+    openModals--;
+    if (openModals <= 0) {
+        document.body.style.overflow = 'auto';
+        restoreScrollPosition();
+    }
+}
+
 
 
 
