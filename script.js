@@ -913,8 +913,8 @@ modalContent.addEventListener("touchend", handlePinchEnd);
 
 
 // ---------- Modal open/close ----------
-
-let overviewOriginalUrl = null; // tracks URL for overview modals separately
+let overviewOriginalUrl = null;
+let openOverviewModals = 0; // Track multiple overview modals
 
 function openOverviewModal(productId, skipHistory = false) {
     const product = galleryData.find(g => g.id === productId);
@@ -924,8 +924,9 @@ function openOverviewModal(productId, skipHistory = false) {
     const baseUrl = `${window.location.origin}${window.location.pathname}`;
     const newUrl = `${baseUrl}?gallery=${slug}`;
 
-    // Only set original URL if this is the first overview modal
-    if (!overviewOriginalUrl) overviewOriginalUrl = window.location.href;
+    // Save original URL only at first open
+    if (openOverviewModals === 0) overviewOriginalUrl = window.location.href;
+    openOverviewModals++;
 
     if (!skipHistory) {
         history.pushState({ gallery: slug }, '', newUrl);
@@ -938,6 +939,7 @@ function openOverviewModal(productId, skipHistory = false) {
         overviewModal = document.createElement('div');
         overviewModal.id = `overview-modal-${productId}`;
         overviewModal.className = 'overview-modal';
+        document.body.appendChild(overviewModal);
 
         // Build modal content
         let buttonsHTML = '';
@@ -945,49 +947,47 @@ function openOverviewModal(productId, skipHistory = false) {
 
         if (product.description_text?.trim()) {
             bodyHTML += `
-                <div class="overview-content active" id="overview-text-${productId}">
-                    <p>${product.description_text}</p>
-                </div>`;
+            <div class="overview-content active" id="overview-text-${productId}">
+                <p>${product.description_text}</p>
+            </div>`;
             buttonsHTML += `<button class="active" data-target="overview-text-${productId}">Overview</button>`;
         }
 
         if (product.images?.length) {
             bodyHTML += `
-                <div class="overview-content" id="overview-images-${productId}">
-                    <div class="images" id="overview-images-container-${productId}"></div>
-                    <div class="pagination" id="overview-images-pagination-${productId}"></div>
-                </div>`;
+            <div class="overview-content" id="overview-images-${productId}">
+                <div class="images" id="overview-images-container-${productId}"></div>
+                <div class="pagination" id="overview-images-pagination-${productId}"></div>
+            </div>`;
             const cls = buttonsHTML ? '' : 'active';
             buttonsHTML += `<button class="${cls}" data-target="overview-images-${productId}">Images</button>`;
         }
 
         if (product.videos?.length) {
             bodyHTML += `
-                <div class="overview-content" id="overview-videos-${productId}">
-                    <div class="images" id="overview-videos-container-${productId}"></div>
-                    <div class="pagination" id="overview-videos-pagination-${productId}"></div>
-                </div>`;
+            <div class="overview-content" id="overview-videos-${productId}">
+                <div class="images" id="overview-videos-container-${productId}"></div>
+                <div class="pagination" id="overview-videos-pagination-${productId}"></div>
+            </div>`;
             const cls = buttonsHTML ? '' : 'active';
             buttonsHTML += `<button class="${cls}" data-target="overview-videos-${productId}">Videos</button>`;
         }
 
         overviewModal.innerHTML = `
-            <div class="overview-header">
-                <h2>${product.description_title || 'Details'}</h2>
-                <button class="close-overview">×</button>
-            </div>
-            <div class="overview-body">
-                ${bodyHTML || "<p style='text-align:center;'>No details available.</p>"}
-            </div>
-            <div class="overview-pagination">${buttonsHTML}</div>
+        <div class="overview-header">
+            <h2>${product.description_title || 'Details'}</h2>
+            <button class="close-overview">×</button>
+        </div>
+        <div class="overview-body">
+            ${bodyHTML || "<p style='text-align:center;'>No details available.</p>"}
+        </div>
+        <div class="overview-pagination">${buttonsHTML}</div>
         `;
 
-        document.body.appendChild(overviewModal);
-
-        // Close modal events
+        // Close modal buttons
         overviewModal.querySelector('.close-overview').addEventListener('click', () => closeOverviewModal(overviewModal));
-        overviewModal.addEventListener('click', e => { 
-            if (e.target === overviewModal) closeOverviewModal(overviewModal); 
+        overviewModal.addEventListener('click', e => {
+            if (e.target === overviewModal) closeOverviewModal(overviewModal);
         });
 
         // Tab switching
@@ -1000,7 +1000,6 @@ function openOverviewModal(productId, skipHistory = false) {
             });
         });
 
-        // Render images/videos
         renderOverviewImages(productId, product.images || []);
         renderOverviewVideos(productId, product.videos || []);
     }
@@ -1014,22 +1013,21 @@ function openOverviewModal(productId, skipHistory = false) {
 
 function closeOverviewModal(modal) {
     modal.classList.remove('show');
-    openModals--;
+    openOverviewModals--;
 
-    if (openModals <= 0) {
+    if (openOverviewModals <= 0) {
         restoreScrollPosition();
         document.body.style.overflow = 'auto';
+        // Restore original URL if no other overview modal is open
+        if (overviewOriginalUrl) {
+            history.replaceState({}, '', overviewOriginalUrl);
+            overviewOriginalUrl = null;
+        }
     }
 
+    // Remove modal from DOM after animation
     setTimeout(() => modal.remove(), 300);
-
-    // Restore URL only for overview modal
-    if (overviewOriginalUrl) {
-        history.replaceState({}, '', overviewOriginalUrl);
-        overviewOriginalUrl = null;
-    }
 }
-
 
 
 
