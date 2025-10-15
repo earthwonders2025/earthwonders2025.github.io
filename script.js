@@ -1201,41 +1201,27 @@ function openNavLogoOverviewModal(skipHistory = false) {
     overviewModal.id = "overview-modal-navlogo";
     overviewModal.className = "overview-modal";
 
-    const logoText = document.getElementById("navLogo")?.textContent.trim() || "EarthWonders";
+    const logoText = document.getElementById("navLogo")?.textContent.trim() || "Gallery";
 
-    // ✅ footer-style structure + static content for now
+    // Build dynamic gallery list
+    let galleryHTML = "<ul>";
+    galleryData.forEach(item => {
+      const slug = item.nav_title.toLowerCase().replace(/\s+/g, '');
+      const url = `${baseUrl}?gallery=${slug}`;
+      galleryHTML += `<li><a href="${url}" onclick="event.preventDefault(); openOverviewModal(${item.id});">${item.nav_title}</a></li>`;
+    });
+    galleryHTML += "</ul>";
+
     overviewModal.innerHTML = `
       <div class="overview-header">
         <h2>${logoText}</h2>
         <button class="close-overview">×</button>
       </div>
 
-      <div class="overview-body footer-style-body">
-        <section class="footer-section">
-          <h3>About ${logoText}</h3>
-          <p>Discover Earth's most breathtaking landscapes and natural wonders. 
-          ${logoText} is dedicated to showcasing stunning imagery and stories that celebrate our planet’s beauty.</p>
-        </section>
-
-        <section class="footer-section">
-          <h3>Our Mission</h3>
-          <p>To inspire awareness and appreciation for nature through visual storytelling and immersive experiences.</p>
-        </section>
-
-        <section class="footer-section">
-          <h3>Explore More</h3>
-          <ul>
-            <li>Stunning Galleries</li>
-            <li Immersive Videos</li>
-            <li>Behind the Lens</li>
-            <li>Travel Stories</li>
-          </ul>
-        </section>
-
-        <section class="footer-section">
-          <h3>Contact Us</h3>
-          <p>Email: <a href="mailto:testearthwonders.com">test@earthwonders.com</a></p>
-          <p>qwert.</p>
+      <div class="overview-body footer-like">
+        <section class="footer-block">
+          <h3>Gallery Items</h3>
+          ${galleryHTML}
         </section>
       </div>
     `;
@@ -1252,8 +1238,6 @@ function openNavLogoOverviewModal(skipHistory = false) {
   overviewModal.classList.add("show");
   document.body.style.overflow = "hidden";
 }
-
-
 
 function closeNavLogoOverviewModal(modal) {
     modal.classList.remove('show');
