@@ -542,8 +542,7 @@ function restoreScrollPosition() {
     // Use 'instant' so the page does not jump unexpectedly
     window.scrollTo({ top: lastScrollY, behavior: 'instant' });
 }
-
-        /* ---------- MODAL MANAGEMENT ---------- */
+    /* ---------- MODAL MANAGEMENT ---------- */
         function setupEventListeners() {
             // Close modal event
             closeModalBtn.addEventListener('click', closeImageModal);
@@ -915,9 +914,11 @@ modalContent.addEventListener("touchend", handlePinchEnd);
 
 // ---------- Modal open/close ----------
 let overviewOriginalUrl = null; // global variable to store the original URL
+let lastScrollY = 0;            // global scroll position
 
 function openOverviewModal(productId, skipHistory = false) {
-    saveScrollPosition();
+    // save scroll before opening modal
+    if (openModals === 0) saveScrollPosition();
     openModals++;
 
     const product = galleryData.find(g => g.id === productId);
@@ -929,13 +930,13 @@ function openOverviewModal(productId, skipHistory = false) {
 
     // Save original URL only once
     if (!overviewOriginalUrl) {
-        overviewOriginalUrl = baseUrl; // always restore to base URL
+        overviewOriginalUrl = baseUrl;
     }
 
     if (!skipHistory) {
         history.pushState({ gallery: slug }, '', newUrl);
     } else {
-        // For direct links, replace current history with base, then push new state
+        // For direct links or refresh, replace current history with base, then push new state
         history.replaceState({}, '', baseUrl);
         history.pushState({ gallery: slug }, '', newUrl);
     }
@@ -1018,8 +1019,8 @@ function closeOverviewModal(modal) {
     openModals--;
 
     if (openModals <= 0) {
-        restoreScrollPosition();
         document.body.style.overflow = 'auto';
+        restoreScrollPosition(); // scroll restored properly even for direct links
     }
 
     // Restore URL to original base page
@@ -1028,8 +1029,6 @@ function closeOverviewModal(modal) {
         overviewOriginalUrl = null; // reset for next modal
     }
 }
-
-
 
 // ---------- handle direct links ----------
 function handleDirectGalleryLinks(data) {
