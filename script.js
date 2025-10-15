@@ -542,7 +542,9 @@ function restoreScrollPosition() {
     // Use 'instant' so the page does not jump unexpectedly
     window.scrollTo({ top: lastScrollY, behavior: 'instant' });
 }
-    /* ---------- MODAL MANAGEMENT ---------- */
+
+
+        /* ---------- MODAL MANAGEMENT ---------- */
         function setupEventListeners() {
             // Close modal event
             closeModalBtn.addEventListener('click', closeImageModal);
@@ -917,7 +919,7 @@ let overviewOriginalUrl = null; // global variable to store the original URL
 let lastScrollY = 0;            // global scroll position
 
 function openOverviewModal(productId, skipHistory = false) {
-    // Save scroll on first modal open
+    // save scroll before opening modal
     if (openModals === 0) saveScrollPosition();
     openModals++;
 
@@ -928,13 +930,15 @@ function openOverviewModal(productId, skipHistory = false) {
     const baseUrl = `${window.location.origin}${window.location.pathname}`;
     const newUrl = `${baseUrl}?gallery=${slug}`;
 
-    // Save original URL once
-    if (!overviewOriginalUrl) overviewOriginalUrl = baseUrl;
+    // Save original URL only once
+    if (!overviewOriginalUrl) {
+        overviewOriginalUrl = baseUrl;
+    }
 
     if (!skipHistory) {
         history.pushState({ gallery: slug }, '', newUrl);
     } else {
-        // For direct link or refresh
+        // For direct links or refresh, replace current history with base, then push new state
         history.replaceState({}, '', baseUrl);
         history.pushState({ gallery: slug }, '', newUrl);
     }
@@ -944,24 +948,65 @@ function openOverviewModal(productId, skipHistory = false) {
         overviewModal = document.createElement('div');
         overviewModal.id = `overview-modal-${productId}`;
         overviewModal.className = 'overview-modal';
+
+        let buttonsHTML = '';
+        let bodyHTML = '';
+
+        if (product.description_text?.trim()) {
+            bodyHTML += `
+                <div class="overview-content active" id="overview-text-${productId}">
+                  <p>${product.description_text}</p>
+                </div>`;
+            buttonsHTML += `<button class="active" data-target="overview-text-${productId}">Overview</button>`;
+        }
+
+        if (product.images?.length) {
+            bodyHTML += `
+                <div class="overview-content" id="overview-images-${productId}">
+                  <div class="images" id="overview-images-container-${productId}"></div>
+                  <div class="pagination" id="overview-images-pagination-${productId}"></div>
+                </div>`;
+            const cls = buttonsHTML ? '' : 'active';
+            buttonsHTML += `<button class="${cls}" data-target="overview-images-${productId}">Images</button>`;
+        }
+
+        if (product.videos?.length) {
+            bodyHTML += `
+                <div class="overview-content" id="overview-videos-${productId}">
+                  <div class="images" id="overview-videos-container-${productId}"></div>
+                  <div class="pagination" id="overview-videos-pagination-${productId}"></div>
+                </div>`;
+            const cls = buttonsHTML ? '' : 'active';
+            buttonsHTML += `<button class="${cls}" data-target="overview-videos-${productId}">Videos</button>`;
+        }
+
         overviewModal.innerHTML = `
             <div class="overview-header">
                 <h2>${product.description_title || 'Details'}</h2>
                 <button class="close-overview">×</button>
             </div>
             <div class="overview-body">
-                ${product.description_text ? `<div class="overview-content active" id="overview-text-${productId}"><p>${product.description_text}</p></div>` : ''}
-                ${product.images?.length ? `<div class="overview-content" id="overview-images-${productId}"><div class="images" id="overview-images-container-${productId}"></div><div class="pagination" id="overview-images-pagination-${productId}"></div></div>` : ''}
-                ${product.videos?.length ? `<div class="overview-content" id="overview-videos-${productId}"><div class="images" id="overview-videos-container-${productId}"></div><div class="pagination" id="overview-videos-pagination-${productId}"></div></div>` : ''}
+                ${bodyHTML || "<p style='text-align:center;'>No details available.</p>"}
             </div>
+            <div class="overview-pagination">${buttonsHTML}</div>
         `;
+
         document.body.appendChild(overviewModal);
 
-        // Close button
+        // Close modal
         overviewModal.querySelector('.close-overview').addEventListener('click', () => closeOverviewModal(overviewModal));
         overviewModal.addEventListener('click', e => { if (e.target === overviewModal) closeOverviewModal(overviewModal); });
 
-        // Render images/videos
+        // Tab switching
+        overviewModal.querySelectorAll('.overview-pagination button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                overviewModal.querySelectorAll('.overview-pagination button').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                overviewModal.querySelectorAll('.overview-content').forEach(c => c.classList.remove('active'));
+                document.getElementById(btn.dataset.target).classList.add('active');
+            });
+        });
+
         renderOverviewImages(productId, product.images || []);
         renderOverviewVideos(productId, product.videos || []);
     }
@@ -977,12 +1022,13 @@ function closeOverviewModal(modal) {
 
     if (openModals <= 0) {
         document.body.style.overflow = 'auto';
-        restoreScrollPosition(); // restores scroll correctly for direct links too
+        restoreScrollPosition(); // scroll restored properly even for direct links
     }
 
+    // Restore URL to original base page
     if (overviewOriginalUrl) {
         history.replaceState({}, '', overviewOriginalUrl);
-        overviewOriginalUrl = null;
+        overviewOriginalUrl = null; // reset for next modal
     }
 }
 
