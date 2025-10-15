@@ -1222,7 +1222,9 @@ function renderNavLogoGalleryPage(page = 1) {
 
     let html = '<div class="gallery-table" style="display:grid;gap:1rem;grid-template-columns:repeat(auto-fill,minmax(200px,1fr))">';
     pageItems.forEach(item => {
-        const image = item.images?.[0] || ''; // first image from data
+        const image = item.images?.[0]?.image_url || item.main_image_url || '';
+        if (!image) return; // skip if no image
+
         const shortDesc = item.short_desc || '';
         html += `
             <div class="gallery-item" style="border:1px solid #333;border-radius:8px;overflow:hidden;">
@@ -1239,7 +1241,7 @@ function renderNavLogoGalleryPage(page = 1) {
 
     container.innerHTML = html;
 
-    // Pagination buttons
+    // Pagination
     const totalPages = Math.ceil(galleryData.length / navLogoItemsPerPage);
     let paginationHTML = '';
     for (let i = 1; i <= totalPages; i++) {
@@ -1247,6 +1249,7 @@ function renderNavLogoGalleryPage(page = 1) {
     }
     paginationContainer.innerHTML = paginationHTML;
 }
+
 
 function changeNavLogoPage(page) {
     navLogoCurrentPage = page;
