@@ -1152,20 +1152,20 @@ function renderOverviewVideos(productId, videos) {
     
     render();
 }
+let navLogoOpen = false;
+let currentGalleryInNavLogo = null; // Tracks gallery opened from NavLogo
 
-// ---------- NavLogo Overview with Gallery Table ----------
-let currentGalleryInNavLogo = null; // track if a gallery is open inside NavLogo
-let navLogoCurrentPage = 1;
-const navLogoItemsPerPage = 6;
-
+// ---------- Open NavLogo Overview ----------
 function openNavLogoOverviewModal(skipHistory = false) {
     if (openModals === 0) saveScrollPosition();
     openModals++;
-    currentGalleryInNavLogo = null;
+    navLogoOpen = true;
 
     const baseUrl = `${window.location.origin}${window.location.pathname}`;
     const navLogoSlug = "navlogo";
     const newUrl = `${baseUrl}?gallery=${navLogoSlug}`;
+
+    if (!overviewOriginalUrl) overviewOriginalUrl = baseUrl;
 
     if (!skipHistory) {
         history.pushState({ gallery: navLogoSlug }, "", newUrl);
@@ -1182,6 +1182,15 @@ function openNavLogoOverviewModal(skipHistory = false) {
 
         const logoText = document.getElementById("navLogo")?.textContent.trim() || "Gallery";
 
+        // Dynamic gallery list
+        let galleryHTML = "<ul>";
+        galleryData.forEach(item => {
+            galleryHTML += `<li>
+                <a href="#" onclick="event.preventDefault(); openGalleryFromNavLogo(${item.id});">${item.nav_title}</a>
+            </li>`;
+        });
+        galleryHTML += "</ul>";
+
         overviewModal.innerHTML = `
             <div class="overview-header">
                 <h2>${logoText}</h2>
@@ -1189,92 +1198,46 @@ function openNavLogoOverviewModal(skipHistory = false) {
             </div>
             <div class="overview-body footer-like">
                 <section class="footer-block">
-                    <div id="navlogo-gallery-container"></div>
-                    <div class="pagination" id="navlogo-gallery-pagination"></div>
+                    <h3>Gallery Items</h3>
+                    ${galleryHTML}
                 </section>
             </div>
         `;
 
         document.body.appendChild(overviewModal);
 
-        // Close NavLogo modal
+        // Close NavLogo modal using its own button
         overviewModal.querySelector(".close-navlogo").addEventListener("click", () => closeNavLogoOverviewModal());
         overviewModal.addEventListener("click", e => {
             if (e.target === overviewModal) closeNavLogoOverviewModal();
         });
     }
 
-    renderNavLogoGalleryPage(navLogoCurrentPage);
     overviewModal.classList.add("show");
     document.body.style.overflow = "hidden";
 }
 
-// ---------- Render Table-Like Gallery with Pagination ----------
-function renderNavLogoGalleryPage(page = 1) {
-    const container = document.getElementById("navlogo-gallery-container");
-    const paginationContainer = document.getElementById("navlogo-gallery-pagination");
-    if (!container || !paginationContainer) return;
-
-    const start = (page - 1) * navLogoItemsPerPage;
-    const end = start + navLogoItemsPerPage;
-    const pageItems = galleryData.slice(start, end);
-
-    let html = '<div class="gallery-table">';
-    pageItems.forEach(item => {
-        html += `
-            <div class="gallery-item">
-                <img src="${item.images?.[0] || ''}" alt="${item.nav_title}" />
-                <div class="gallery-info">
-                    <strong>${item.nav_title}</strong>
-                    <p>${item.short_desc || ''}</p>
-                    <button onclick="openGalleryFromNavLogo(${item.id})">View</button>
-                </div>
-            </div>
-        `;
-    });
-    html += '</div>';
-
-    container.innerHTML = html;
-
-    // Pagination buttons
-    const totalPages = Math.ceil(galleryData.length / navLogoItemsPerPage);
-    let paginationHTML = '';
-    for (let i = 1; i <= totalPages; i++) {
-        paginationHTML += `<button class="${i === page ? 'active' : ''}" onclick="changeNavLogoPage(${i})">${i}</button>`;
-    }
-    paginationContainer.innerHTML = paginationHTML;
-}
-
-function changeNavLogoPage(page) {
-    navLogoCurrentPage = page;
-    renderNavLogoGalleryPage(page);
-}
-
 // ---------- Open gallery from NavLogo ----------
 function openGalleryFromNavLogo(productId) {
-    currentGalleryInNavLogo = productId; // track open gallery
     const baseUrl = `${window.location.origin}${window.location.pathname}`;
     const gallery = galleryData.find(g => g.id === productId);
     if (!gallery) return;
-    const slug = gallery.nav_title.toLowerCase().replace(/\s+/g, '');
-    const newUrl = `${baseUrl}?gallery=${slug}`;
 
-    const navLogoModal = document.getElementById("overview-modal-navlogo");
+    currentGalleryInNavLogo = productId; // Mark gallery as open inside NavLogo
+    openOverviewModal(productId);
 
-    openOverviewModal(productId); // normal gallery modal
-
-    // Hook close specifically for this gallery modal
     const galleryModal = document.getElementById(`overview-modal-${productId}`);
     if (!galleryModal) return;
 
-    const closeBtn = galleryModal.querySelector(".close-overview");
-    const originalClose = closeBtn.onclick;
-    closeBtn.onclick = function () {
+    // Gallery close button still .close-overview
+    galleryModal.querySelector(".close-overview").onclick = function () {
         closeOverviewModal(galleryModal);
+
+        // Reset current gallery
         currentGalleryInNavLogo = null;
 
-        // Restore NavLogo URL
-        if (navLogoModal) {
+        // Restore NavLogo URL if NavLogo modal is still open
+        if (navLogoOpen) {
             history.replaceState({ gallery: "navlogo" }, "", `${baseUrl}?gallery=navlogo`);
         }
     };
@@ -1287,7 +1250,9 @@ function closeNavLogoOverviewModal() {
 
     navLogoModal.classList.remove("show");
     navLogoModal.remove();
+    navLogoOpen = false;
     openModals--;
+
     if (openModals <= 0) {
         document.body.style.overflow = "auto";
         restoreScrollPosition();
@@ -1295,11 +1260,33 @@ function closeNavLogoOverviewModal() {
 
     const baseUrl = `${window.location.origin}${window.location.pathname}`;
 
+    // Only clear URL if no gallery is currently open inside NavLogo
     if (!currentGalleryInNavLogo) {
         history.replaceState({}, "", baseUrl);
+        overviewOriginalUrl = null;
     }
 }
 
+
+// ---------- Handle back/forward ----------
+window.addEventListener('popstate', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const slug = urlParams.get('gallery');
+
+    if (slug === "navlogo") {
+        openNavLogoOverviewModal(true);
+    } else if (slug) {
+        const gallery = galleryData.find(g => g.nav_title.toLowerCase().replace(/\s+/g, '') === slug);
+        if (gallery) openOverviewModal(gallery.id, true);
+    } else {
+        // No gallery → close all modals
+        document.querySelectorAll('.overview-modal.show').forEach(m => m.remove());
+        document.body.style.overflow = "auto";
+        restoreScrollPosition();
+        navLogoOpen = false;
+        currentGalleryInNavLogo = null;
+    }
+});
 
     // 
     // 
