@@ -1194,7 +1194,7 @@ function openNavLogoOverviewModal(skipHistory = false) {
         overviewModal.innerHTML = `
             <div class="overview-header">
                 <h2>${logoText}</h2>
-                <button class="close-overview">×</button>
+                <button class="close-navlogo">×</button>
             </div>
             <div class="overview-body footer-like">
                 <section class="footer-block">
@@ -1206,8 +1206,8 @@ function openNavLogoOverviewModal(skipHistory = false) {
 
         document.body.appendChild(overviewModal);
 
-        // Close NavLogo modal
-        overviewModal.querySelector(".close-overview").addEventListener("click", () => closeNavLogoOverviewModal());
+        // Close NavLogo modal using its own button
+        overviewModal.querySelector(".close-navlogo").addEventListener("click", () => closeNavLogoOverviewModal());
         overviewModal.addEventListener("click", e => {
             if (e.target === overviewModal) closeNavLogoOverviewModal();
         });
@@ -1229,6 +1229,7 @@ function openGalleryFromNavLogo(productId) {
     const galleryModal = document.getElementById(`overview-modal-${productId}`);
     if (!galleryModal) return;
 
+    // Gallery close button still .close-overview
     galleryModal.querySelector(".close-overview").onclick = function () {
         closeOverviewModal(galleryModal);
 
@@ -1283,7 +1284,6 @@ window.addEventListener('popstate', () => {
         currentGalleryInNavLogo = null;
     }
 });
-
 
     // 
     // 
