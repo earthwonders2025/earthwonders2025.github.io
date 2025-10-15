@@ -913,7 +913,6 @@ modalContent.addEventListener("touchend", handlePinchEnd);
 
 
 // ---------- Modal open/close ----------
-// ---------- Modal open/close ----------
 function openOverviewModal(productId, skipHistory = false) {
     const product = galleryData.find(g => g.id === productId);
     if (!product) return;
@@ -922,11 +921,13 @@ function openOverviewModal(productId, skipHistory = false) {
     const baseUrl = `${window.location.origin}${window.location.pathname}`;
     const newUrl = `${baseUrl}?gallery=${slug}`;
 
-   if (!skipHistory) {
-    history.pushState({ gallery: slug }, '', newUrl);
-} else {
-    history.replaceState({ gallery: slug }, '', newUrl);
-}
+    if (!originalUrl) originalUrl = window.location.href;
+
+    if (!skipHistory) {
+        history.pushState({ gallery: slug }, '', newUrl);
+    } else {
+        history.replaceState({ gallery: slug }, '', newUrl);
+    }
 
     // build & show modal...
     let overviewModal = document.getElementById(`overview-modal-${productId}`);
@@ -1015,13 +1016,14 @@ function closeOverviewModal(modal) {
         document.body.style.overflow = 'auto';
     }
 
-    // Remove modal from DOM after animation
     setTimeout(() => modal.remove(), 300);
 
-    // ✅ Always remove ?gallery from URL
-    const baseUrl = window.location.origin + window.location.pathname;
-    history.replaceState({}, '', baseUrl);
+    if (originalUrl) {
+        history.replaceState({}, '', originalUrl);
+        originalUrl = null; // reset
+    }
 }
+
 
 
 
