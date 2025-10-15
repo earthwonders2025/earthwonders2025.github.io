@@ -36,7 +36,7 @@
   font-size: 1.8rem;
 }
 
-.close-overview {
+.close-overview .close-navlogo {
   background: #ffb300;
   border: none;
   color: #252538;
@@ -52,7 +52,7 @@
   transition: background 0.3s;
 }
 
-.close-overview:hover {
+.close-overview .close-navlogo:hover {
    background: #ff8c00;
   color: white;
 }
