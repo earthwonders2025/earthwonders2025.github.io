@@ -1067,33 +1067,6 @@ function handleDirectGalleryLinks(data) {
 }
 
 
-// call after setupNavigation(data)
-// handleDirectGalleryLinks(data);
-
-// ---------- browser back/forward ----------
-window.addEventListener("popstate", () => {
-  const urlParams = new URLSearchParams(window.location.search);
-  const slug = urlParams.get("gallery");
-
-  if (slug) {
-    if (slug === "navlogo") {
-      openNavLogoOverviewModal(true); // same skipHistory behavior
-    } else {
-      const g = galleryData.find(x => x.nav_title.toLowerCase().replace(/\s+/g, "") === slug);
-      if (g) openOverviewModal(g.id, true);
-    }
-  } else {
-    // no gallery → close all overview modals
-    document.querySelectorAll(".overview-modal.show").forEach(m => {
-      m.classList.remove("show");
-      m.remove();
-    });
-    document.body.style.overflow = "auto";
-    restoreScrollPosition();
-  }
-});
-
-
 
 // Images
 function renderOverviewImages(productId, images) {
@@ -1179,13 +1152,13 @@ function renderOverviewVideos(productId, videos) {
     
     render();
 }
-let navLogoOpen = false; // track if NavLogo is open
+let navLogoOpen = false; // tracks if NavLogo is open
 
 // ---------- Open NavLogo Overview ----------
 function openNavLogoOverviewModal(skipHistory = false) {
     if (openModals === 0) saveScrollPosition();
     openModals++;
-    navLogoOpen = true; // mark NavLogo as open
+    navLogoOpen = true;
 
     const baseUrl = `${window.location.origin}${window.location.pathname}`;
     const navLogoSlug = "navlogo";
@@ -1208,6 +1181,7 @@ function openNavLogoOverviewModal(skipHistory = false) {
 
         const logoText = document.getElementById("navLogo")?.textContent.trim() || "Gallery";
 
+        // Dynamic gallery list
         let galleryHTML = "<ul>";
         galleryData.forEach(item => {
             galleryHTML += `<li>
@@ -1248,16 +1222,15 @@ function openGalleryFromNavLogo(productId) {
     const gallery = galleryData.find(g => g.id === productId);
     if (!gallery) return;
 
-    openOverviewModal(productId); // normal gallery modal
+    openOverviewModal(productId);
 
-    // Override gallery modal close
     const galleryModal = document.getElementById(`overview-modal-${productId}`);
     if (!galleryModal) return;
 
-    galleryModal.querySelector(".close-overview").onclick = function() {
+    galleryModal.querySelector(".close-overview").onclick = function () {
         closeOverviewModal(galleryModal);
 
-        // If NavLogo modal is still open, restore its URL
+        // Restore NavLogo URL if NavLogo modal is still open
         if (navLogoOpen) {
             history.replaceState({ gallery: "navlogo" }, "", `${baseUrl}?gallery=navlogo`);
         }
@@ -1286,6 +1259,26 @@ function closeNavLogoOverviewModal() {
         overviewOriginalUrl = null;
     }
 }
+
+// ---------- Handle back/forward ----------
+window.addEventListener('popstate', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const slug = urlParams.get('gallery');
+
+    if (slug === "navlogo") {
+        openNavLogoOverviewModal(true);
+    } else if (slug) {
+        const gallery = galleryData.find(g => g.nav_title.toLowerCase().replace(/\s+/g, '') === slug);
+        if (gallery) openOverviewModal(gallery.id, true);
+    } else {
+        // No gallery → close all modals
+        document.querySelectorAll('.overview-modal.show').forEach(m => m.remove());
+        document.body.style.overflow = "auto";
+        restoreScrollPosition();
+        navLogoOpen = false;
+    }
+});
+
 
     // 
     // 
