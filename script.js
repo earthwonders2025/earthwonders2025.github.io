@@ -1,3 +1,4 @@
+
 /* ---------- INITIALIZATION ---------- */
 document.addEventListener('DOMContentLoaded', () => {
     loadFooterContent();
@@ -179,10 +180,10 @@ if (slug) {
 function updateMetaTags(gallery) {
     if (!gallery) return;
 
-    // Update document title
+    // Title
     document.title = `${gallery.title} | EarthWonders`;
 
-    // Update meta description
+    // Description
     let metaDesc = document.querySelector("meta[name='description']");
     if (!metaDesc) {
         metaDesc = document.createElement('meta');
@@ -191,7 +192,7 @@ function updateMetaTags(gallery) {
     }
     metaDesc.content = gallery.subtitle || gallery.description || `Explore the gallery "${gallery.title}" on EarthWonders.`;
 
-    // Optional: update keywords
+    // Keywords
     let metaKeywords = document.querySelector("meta[name='keywords']");
     if (!metaKeywords) {
         metaKeywords = document.createElement('meta');
@@ -199,13 +200,41 @@ function updateMetaTags(gallery) {
         document.head.appendChild(metaKeywords);
     }
     metaKeywords.content = gallery.title.split(' ').join(', ') + ', gallery, travel, nature, photography';
+
+    // Canonical
+    let canonical = document.querySelector("link[rel='canonical']");
+    if (!canonical) {
+        canonical = document.createElement('link');
+        canonical.rel = 'canonical';
+        document.head.appendChild(canonical);
+    }
+    canonical.href = `${window.location.origin}${window.location.pathname}?gallery=${gallery.nav_title.toLowerCase().replace(/\s+/g,'')}`;
+
+    // Open Graph
+    let ogTitle = document.querySelector("meta[property='og:title']");
+    if (!ogTitle) {
+        ogTitle = document.createElement('meta');
+        ogTitle.setAttribute('property', 'og:title');
+        document.head.appendChild(ogTitle);
+    }
+    ogTitle.content = document.title;
+
+    let ogDesc = document.querySelector("meta[property='og:description']");
+    if (!ogDesc) {
+        ogDesc = document.createElement('meta');
+        ogDesc.setAttribute('property', 'og:description');
+        document.head.appendChild(ogDesc);
+    }
+    ogDesc.content = metaDesc.content;
 }
+
 
 /**
  * Adds JSON-LD structured data for each gallery
  */
 function addGalleryStructuredData(gallery) {
     if (!gallery) return;
+
     const script = document.createElement('script');
     script.type = 'application/ld+json';
     script.textContent = JSON.stringify({
@@ -217,7 +246,6 @@ function addGalleryStructuredData(gallery) {
     });
     document.head.appendChild(script);
 }
-
 /**
  * ---------- GALLERY RENDERING ----------
  */
@@ -287,21 +315,19 @@ function setupScrollHighlight(navLinksEls) {
         navLinksEls.forEach(link => {
             const isActive = link.getAttribute("href") === "#" + currentId;
             link.classList.toggle("active", isActive);
-            if (isActive) link.scrollIntoView({ behavior: "smooth", inline: "center" });
-
-            // Update meta tags for currently active gallery
-            const activeGallery = galleryData.find(g => g.nav_title.toLowerCase().replace(/\s+/g,'-') === currentId);
-            if (activeGallery) updateMetaTags(activeGallery);
         });
-        updateMeta(
-          gallery.title + " – EarthWonders",
-          gallery.subtitle || "Explore this gallery on EarthWonders"
-);
+
+        // Update meta for currently visible gallery
+        const activeGallery = galleryData.find(g => g.nav_title.toLowerCase().replace(/\s+/g,'-') === currentId);
+        if (activeGallery) {
+            updateMetaTags(activeGallery);
+        }
     }
 
     window.addEventListener("scroll", highlightNav, { passive: true });
     highlightNav();
 }
+
 
 
             const IMAGES_PER_PAGE = 4;
@@ -889,23 +915,22 @@ modalContent.addEventListener("touchend", handlePinchEnd);
 // ---------- Modal open/close ----------
 // ---------- Modal open/close ----------
 function openOverviewModal(productId, skipHistory = false) {
-  saveScrollPosition();
-  openModals++;
+    const product = galleryData.find(g => g.id === productId);
+    if (!product) return;
 
-  const product = galleryData.find(g => g.id === productId);
-  if (!product) return;
+    const slug = product.nav_title.toLowerCase().replace(/\s+/g,'');
+    const baseUrl = `${window.location.origin}${window.location.pathname}`;
+    const newUrl = `${baseUrl}?gallery=${slug}`;
 
-  const slug = product.nav_title.toLowerCase().replace(/\s+/g, '');
-  const baseUrl = `${window.location.origin}${window.location.pathname}`;
-  const newUrl = `${baseUrl}?gallery=${slug}`;
+    if (skipHistory) {
+        history.replaceState({}, '', baseUrl);
+        history.pushState({ gallery: slug }, '', newUrl);
+    } else {
+        history.pushState({ gallery: slug }, '', newUrl);
+    }
 
-  // 👇 if opening from direct link, make sure base page is in history
-  if (skipHistory) {
-    history.replaceState({}, '', baseUrl);
-    history.pushState({ gallery: slug }, '', newUrl);
-  } else {
-    history.pushState({ gallery: slug }, '', newUrl);
-  }
+    updateMetaTags(product);        // ✅ Update title & description
+    addGalleryStructuredData(product);
 
   let overviewModal = document.getElementById(`overview-modal-${productId}`);
   if (!overviewModal) {
@@ -996,16 +1021,19 @@ function closeOverviewModal(modal) {
 
 // ---------- handle direct links ----------
 function handleDirectGalleryLinks(data) {
-  const urlParams = new URLSearchParams(window.location.search);
-  const slug = urlParams.get('gallery');
-  if (!slug) return;
+    const urlParams = new URLSearchParams(window.location.search);
+    const slug = urlParams.get('gallery');
+    if (!slug) return;
 
-  const gallery = data.find(g => g.nav_title.toLowerCase().replace(/\s+/g, '') === slug);
-  if (!gallery) return;
+    const gallery = data.find(g => g.nav_title.toLowerCase().replace(/\s+/g, '') === slug);
+    if (!gallery) return;
 
-  const hero = document.getElementById(gallery.nav_title.toLowerCase().replace(/\s+/g, '-'));
-  if (hero) hero.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  setTimeout(() => openOverviewModal(gallery.id, true), 600);
+    const hero = document.getElementById(gallery.nav_title.toLowerCase().replace(/\s+/g, '-'));
+    if (hero) hero.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    setTimeout(() => openOverviewModal(gallery.id, true), 600);
+    updateMetaTags(gallery);         // ✅ Update title/description immediately
+    addGalleryStructuredData(gallery);
 }
 
 // call after setupNavigation(data)
