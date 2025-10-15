@@ -979,9 +979,10 @@ function openOverviewModal(productId, skipHistory = false) {
     document.body.appendChild(overviewModal);
 
     // close modal
-    overviewModal.querySelector('.close-overview').addEventListener('click', () => closeOverviewModal(overviewModal));
-    overviewModal.addEventListener('click', e => { if (e.target === overviewModal) closeOverviewModal(overviewModal); });
-
+overviewModal.querySelector('.close-overview').addEventListener('click', () => closeOverviewModal(overviewModal));
+overviewModal.addEventListener('click', e => { 
+    if (e.target === overviewModal) closeOverviewModal(overviewModal); 
+});
     // tab switching
     overviewModal.querySelectorAll('.overview-pagination button').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -1008,17 +1009,20 @@ function closeOverviewModal(modal) {
     openModals--;
 
     if (openModals <= 0) {
-        restoreScrollPosition();
+        restoreScrollPosition();       // restore scroll before unlocking
         document.body.style.overflow = 'auto';
     }
 
-    // ✅ Remove query param only if we added it
-    const state = history.state;
+    // Remove ?gallery from URL if it exists
     const urlParams = new URLSearchParams(window.location.search);
-    if (state?.gallery && urlParams.has('gallery')) {
-        history.back(); // go back instead of pushState
+    if (urlParams.has('gallery')) {
+        history.back();  // Go back to the previous URL
     }
+
+    // Remove modal from DOM after animation
+    setTimeout(() => modal.remove(), 300);
 }
+
 
 // ---------- handle direct links ----------
 function handleDirectGalleryLinks(data) {
