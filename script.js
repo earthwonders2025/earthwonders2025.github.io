@@ -922,18 +922,13 @@ function openOverviewModal(productId, skipHistory = false) {
     const baseUrl = `${window.location.origin}${window.location.pathname}`;
     const newUrl = `${baseUrl}?gallery=${slug}`;
 
-    if (skipHistory) {
-        history.replaceState({}, '', baseUrl);
-        history.pushState({ gallery: slug }, '', newUrl);
-    } else {
-        history.pushState({ gallery: slug }, '', newUrl);
+    if (!skipHistory) {
+        history.pushState({ gallery: slug }, '', newUrl); // push only if not skipHistory
     }
 
-    updateMetaTags(product);        // ✅ Update title & description
-    addGalleryStructuredData(product);
-
-  let overviewModal = document.getElementById(`overview-modal-${productId}`);
-  if (!overviewModal) {
+    // build & show modal...
+    let overviewModal = document.getElementById(`overview-modal-${productId}`);
+    if (!overviewModal) {
     overviewModal = document.createElement('div');
     overviewModal.id = `overview-modal-${productId}`;
     overviewModal.className = 'overview-modal';
@@ -1001,22 +996,28 @@ function openOverviewModal(productId, skipHistory = false) {
     renderOverviewVideos(productId, product.videos || []);
   }
 
-  overviewModal.classList.add('show');
-  document.body.style.overflow = 'hidden';
+    overviewModal.classList.add('show');
+    document.body.style.overflow = 'hidden';
+
+    updateMetaTags(product);
+    addGalleryStructuredData(product);
 }
 
 function closeOverviewModal(modal) {
     modal.classList.remove('show');
-    modal.remove();
     openModals--;
 
     if (openModals <= 0) {
-        restoreScrollPosition();          // restore BEFORE unlocking scroll
+        restoreScrollPosition();
         document.body.style.overflow = 'auto';
     }
 
-    // Update URL last
-    history.pushState({}, '', `${window.location.origin}${window.location.pathname}`);
+    // ✅ Remove query param only if we added it
+    const state = history.state;
+    const urlParams = new URLSearchParams(window.location.search);
+    if (state?.gallery && urlParams.has('gallery')) {
+        history.back(); // go back instead of pushState
+    }
 }
 
 // ---------- handle direct links ----------
@@ -1041,16 +1042,23 @@ handleDirectGalleryLinks(data);
 
 // ---------- browser back/forward ----------
 window.addEventListener('popstate', () => {
-  const urlParams = new URLSearchParams(window.location.search);
-  const slug = urlParams.get('gallery');
-  if (slug) {
-    const g = galleryData.find(x => x.nav_title.toLowerCase().replace(/\s+/g, '') === slug);
-    if (g) openOverviewModal(g.id, true);
-  } else {
-    document.querySelectorAll('.overview-modal.show').forEach(m => m.remove());
-    document.body.style.overflow = 'auto';
-  }
+    const urlParams = new URLSearchParams(window.location.search);
+    const slug = urlParams.get('gallery');
+
+    if (slug) {
+        const g = galleryData.find(x => x.nav_title.toLowerCase().replace(/\s+/g, '') === slug);
+        if (g) openOverviewModal(g.id, true); // skipHistory = true
+    } else {
+        // no gallery → close all overview modals
+        document.querySelectorAll('.overview-modal.show').forEach(m => {
+            m.classList.remove('show');
+            m.remove();
+        });
+        document.body.style.overflow = 'auto';
+        restoreScrollPosition();
+    }
 });
+
 
 // Images
 function renderOverviewImages(productId, images) {
