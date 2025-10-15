@@ -1258,12 +1258,15 @@ function closeNavLogoOverviewModal() {
         restoreScrollPosition();
     }
 
+    const baseUrl = `${window.location.origin}${window.location.pathname}`;
+
     // Only clear URL if no gallery is currently open inside NavLogo
-    if (!currentGalleryInNavLogo && overviewOriginalUrl) {
-        history.replaceState({}, "", overviewOriginalUrl);
+    if (!currentGalleryInNavLogo) {
+        history.replaceState({}, "", baseUrl);
         overviewOriginalUrl = null;
     }
 }
+
 
 // ---------- Handle back/forward ----------
 window.addEventListener('popstate', () => {
