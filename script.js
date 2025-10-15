@@ -1154,7 +1154,8 @@ function renderOverviewVideos(productId, videos) {
 }
 
 // ---------- NavLogo Overview with Hero Images and Text ----------
-let currentGalleryInNavLogo = null; // track if a gallery is open inside NavLogo
+// ---------- NavLogo Overview with Dynamic Data ----------
+let currentGalleryInNavLogo = null; // track open gallery
 let navLogoCurrentPage = 1;
 const navLogoItemsPerPage = 6;
 
@@ -1209,7 +1210,7 @@ function openNavLogoOverviewModal(skipHistory = false) {
     document.body.style.overflow = "hidden";
 }
 
-// ---------- Render Table-Like Gallery with Hero Images ----------
+// ---------- Render NavLogo Gallery Table from galleryData ----------
 function renderNavLogoGalleryPage(page = 1) {
     const container = document.getElementById("navlogo-gallery-container");
     const paginationContainer = document.getElementById("navlogo-gallery-pagination");
@@ -1219,19 +1220,17 @@ function renderNavLogoGalleryPage(page = 1) {
     const end = start + navLogoItemsPerPage;
     const pageItems = galleryData.slice(start, end);
 
-    let html = '<div class="gallery-table">';
+    let html = '<div class="gallery-table" style="display:grid;gap:1rem;grid-template-columns:repeat(auto-fill,minmax(200px,1fr))">';
     pageItems.forEach(item => {
-        // Use hero image if exists
-        const heroImage = document.getElementById(item.nav_title.toLowerCase().replace(/\s+/g, '-'))?.querySelector('img')?.src || item.images?.[0] || '';
-        const heroText = document.getElementById(item.nav_title.toLowerCase().replace(/\s+/g, '-'))?.querySelector('.hero-text')?.textContent || item.short_desc || '';
-        
+        const image = item.images?.[0] || ''; // first image from data
+        const shortDesc = item.short_desc || '';
         html += `
-            <div class="gallery-item">
-                <img src="${heroImage}" alt="${item.nav_title}" />
-                <div class="gallery-info">
+            <div class="gallery-item" style="border:1px solid #333;border-radius:8px;overflow:hidden;">
+                <img src="${image}" alt="${item.nav_title}" style="width:100%;height:150px;object-fit:cover;" />
+                <div class="gallery-info" style="padding:0.5rem;">
                     <strong>${item.nav_title}</strong>
-                    <p>${heroText}</p>
-                    <button onclick="openGalleryFromNavLogo(${item.id})">View</button>
+                    <p style="font-size:0.9rem;color:#ccc;">${shortDesc}</p>
+                    <button style="margin-top:5px;padding:0.3rem 0.5rem;cursor:pointer;" onclick="openGalleryFromNavLogo(${item.id})">View</button>
                 </div>
             </div>
         `;
@@ -1244,7 +1243,7 @@ function renderNavLogoGalleryPage(page = 1) {
     const totalPages = Math.ceil(galleryData.length / navLogoItemsPerPage);
     let paginationHTML = '';
     for (let i = 1; i <= totalPages; i++) {
-        paginationHTML += `<button class="${i === page ? 'active' : ''}" onclick="changeNavLogoPage(${i})">${i}</button>`;
+        paginationHTML += `<button class="${i === page ? 'active' : ''}" onclick="changeNavLogoPage(${i})" style="margin:0 3px;padding:3px 6px;cursor:pointer;">${i}</button>`;
     }
     paginationContainer.innerHTML = paginationHTML;
 }
@@ -1258,10 +1257,6 @@ function changeNavLogoPage(page) {
 function openGalleryFromNavLogo(productId) {
     currentGalleryInNavLogo = productId; // track open gallery
     const baseUrl = `${window.location.origin}${window.location.pathname}`;
-    const gallery = galleryData.find(g => g.id === productId);
-    if (!gallery) return;
-
-    const slug = gallery.nav_title.toLowerCase().replace(/\s+/g, '');
     const navLogoModal = document.getElementById("overview-modal-navlogo");
 
     openOverviewModal(productId); // normal gallery modal
@@ -1303,7 +1298,6 @@ function closeNavLogoOverviewModal() {
         history.replaceState({}, "", baseUrl);
     }
 }
-
     // 
     // 
 
