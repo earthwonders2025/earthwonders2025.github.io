@@ -1180,64 +1180,96 @@ function renderOverviewVideos(productId, videos) {
     render();
 }
 function openNavLogoOverviewModal(skipHistory = false) {
-  if (openModals === 0) saveScrollPosition();
-  openModals++;
+    if (openModals === 0) saveScrollPosition();
+    openModals++;
 
-  const baseUrl = `${window.location.origin}${window.location.pathname}`;
-  const newUrl = `${baseUrl}?gallery=navlogo`;
+    const baseUrl = `${window.location.origin}${window.location.pathname}`;
+    const navLogoSlug = "navlogo";
+    const newUrl = `${baseUrl}?gallery=${navLogoSlug}`;
 
-  if (!overviewOriginalUrl) overviewOriginalUrl = baseUrl;
+    if (!overviewOriginalUrl) overviewOriginalUrl = baseUrl;
 
-  if (!skipHistory) {
-    history.pushState({ gallery: "navlogo" }, "", newUrl);
-  } else {
-    history.replaceState({}, "", baseUrl);
-    history.pushState({ gallery: "navlogo" }, "", newUrl);
-  }
+    if (!skipHistory) {
+        history.pushState({ gallery: navLogoSlug }, "", newUrl);
+    } else {
+        history.replaceState({}, "", baseUrl);
+        history.pushState({ gallery: navLogoSlug }, "", newUrl);
+    }
 
-  let overviewModal = document.getElementById("overview-modal-navlogo");
-  if (!overviewModal) {
-    overviewModal = document.createElement("div");
-    overviewModal.id = "overview-modal-navlogo";
-    overviewModal.className = "overview-modal";
+    let overviewModal = document.getElementById("overview-modal-navlogo");
+    if (!overviewModal) {
+        overviewModal = document.createElement("div");
+        overviewModal.id = "overview-modal-navlogo";
+        overviewModal.className = "overview-modal";
 
-    const logoText = document.getElementById("navLogo")?.textContent.trim() || "Gallery";
+        const logoText = document.getElementById("navLogo")?.textContent.trim() || "Gallery";
 
-    // Build dynamic gallery list
-    let galleryHTML = "<ul>";
-    galleryData.forEach(item => {
-      const slug = item.nav_title.toLowerCase().replace(/\s+/g, '');
-      const url = `${baseUrl}?gallery=${slug}`;
-      galleryHTML += `<li><a href="${url}" onclick="event.preventDefault(); openOverviewModal(${item.id});">${item.nav_title}</a></li>`;
-    });
-    galleryHTML += "</ul>";
+        // Build dynamic gallery list
+        let galleryHTML = "<ul>";
+        galleryData.forEach(item => {
+            galleryHTML += `<li>
+                <a href="#" onclick="event.preventDefault(); openGalleryFromNavLogo(${item.id});">${item.nav_title}</a>
+            </li>`;
+        });
+        galleryHTML += "</ul>";
 
-    overviewModal.innerHTML = `
-      <div class="overview-header">
-        <h2>${logoText}</h2>
-        <button class="close-overview">×</button>
-      </div>
+        overviewModal.innerHTML = `
+            <div class="overview-header">
+                <h2>${logoText}</h2>
+                <button class="close-overview">×</button>
+            </div>
 
-      <div class="overview-body footer-like">
-        <section class="footer-block">
-          <h3>Gallery Items</h3>
-          ${galleryHTML}
-        </section>
-      </div>
-    `;
+            <div class="overview-body footer-like">
+                <section class="footer-block">
+                    <h3>Gallery Items</h3>
+                    ${galleryHTML}
+                </section>
+            </div>
+        `;
 
-    document.body.appendChild(overviewModal);
+        document.body.appendChild(overviewModal);
 
-    // Close modal
-    overviewModal.querySelector(".close-overview").addEventListener("click", () => closeOverviewModal(overviewModal));
-    overviewModal.addEventListener("click", e => {
-      if (e.target === overviewModal) closeOverviewModal(overviewModal);
-    });
-  }
+        // Close NavLogo modal
+        overviewModal.querySelector(".close-overview").addEventListener("click", () => closeOverviewModal(overviewModal));
+        overviewModal.addEventListener("click", e => {
+            if (e.target === overviewModal) closeOverviewModal(overviewModal);
+        });
+    }
 
-  overviewModal.classList.add("show");
-  document.body.style.overflow = "hidden";
+    overviewModal.classList.add("show");
+    document.body.style.overflow = "hidden";
 }
+
+// ---------- Open gallery from NavLogo ----------
+function openGalleryFromNavLogo(productId) {
+    const baseUrl = `${window.location.origin}${window.location.pathname}`;
+    const gallery = galleryData.find(g => g.id === productId);
+    if (!gallery) return;
+    const slug = gallery.nav_title.toLowerCase().replace(/\s+/g, '');
+    const newUrl = `${baseUrl}?gallery=${slug}`;
+
+    // Save current state of NavLogo modal
+    const navLogoModal = document.getElementById("overview-modal-navlogo");
+
+    openOverviewModal(productId); // normal gallery modal
+
+    // Hook close specifically for this gallery modal
+    const galleryModal = document.getElementById(`overview-modal-${productId}`);
+    if (!galleryModal) return;
+
+    const originalClose = galleryModal.querySelector(".close-overview").onclick;
+    galleryModal.querySelector(".close-overview").onclick = function() {
+        // Close gallery modal
+        closeOverviewModal(galleryModal);
+
+        // Restore NavLogo URL without closing NavLogo modal
+        if (navLogoModal) {
+            history.replaceState({ gallery: "navlogo" }, "", `${baseUrl}?gallery=navlogo`);
+        }
+    };
+}
+
+
 
 function closeNavLogoOverviewModal(modal) {
     modal.classList.remove('show');
