@@ -1225,17 +1225,17 @@ function openNavLogoOverviewModal(skipHistory = false) {
         <section class="footer-section">
           <h3>Explore More</h3>
           <ul>
-            <li>🌍 Stunning Galleries</li>
-            <li>🎥 Immersive Videos</li>
-            <li>📸 Behind the Lens</li>
-            <li>🗺️ Travel Stories</li>
+            <li>Stunning Galleries</li>
+            <li Immersive Videos</li>
+            <li>Behind the Lens</li>
+            <li>Travel Stories</li>
           </ul>
         </section>
 
         <section class="footer-section">
           <h3>Contact Us</h3>
-          <p>Email: <a href="mailto:info@earthwonders.com">info@earthwonders.com</a></p>
-          <p>Follow us on social media for updates and new galleries.</p>
+          <p>Email: <a href="mailto:testearthwonders.com">test@earthwonders.com</a></p>
+          <p>qwert.</p>
         </section>
       </div>
     `;
