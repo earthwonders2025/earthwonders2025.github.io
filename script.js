@@ -1,5 +1,8 @@
 /* ---------- INITIALIZATION ---------- */
 // ---------- URL PARAM HELPERS ----------
+function getQueryParams() {
+    return new URLSearchParams(window.location.search);
+}
 function setParam(key, value) {
     const url = new URL(window.location.href);
     if (value === null || value === undefined || value === '') {
