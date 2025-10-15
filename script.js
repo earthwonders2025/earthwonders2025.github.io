@@ -3,21 +3,18 @@
 function getQueryParams() {
     return new URLSearchParams(window.location.search);
 }
-function setParam(key, value) {
-    const url = new URL(window.location.href);
-    if (value === null || value === undefined || value === '') {
-        url.searchParams.delete(key);
-    } else {
-        url.searchParams.set(key, value);
-    }
-    history.pushState({}, '', url);
+
+function updateURL(params, replace = false) {
+    const url = new URL(window.location.origin + window.location.pathname);
+    params.forEach((value, key) => {
+        if (value !== null && value !== undefined && value !== '') {
+            url.searchParams.set(key, value);
+        }
+    });
+    const method = replace ? 'replaceState' : 'pushState';
+    history[method]({}, '', url.toString());
 }
 
-function clearParams(...keys) {
-    const url = new URL(window.location.href);
-    keys.forEach(k => url.searchParams.delete(k));
-    history.pushState({}, '', url);
-}
 document.addEventListener('DOMContentLoaded', () => {
     loadFooterContent();
     // renderProducts();
@@ -561,30 +558,31 @@ function restoreScrollPosition() {
             });
         }
 
-function openImageModal(item, index = 0, itemsArray = [], skipHistory = false) {
+function openImageModal(item, type, index = 0, itemsArray = [], skipHistory = false) {
+    saveScrollPosition();
+    openModals++;
+
     currentGalleryItems = itemsArray;
     currentItemIndex = index;
-    currentItemType = 'image';
+    currentItemType = type;
+
     imageModal.classList.add('show');
+    document.body.style.overflow = 'hidden';
+    scale = 1; offsetX = 0; offsetY = 0;
+
+    if (type === 'image') showCurrentImage();
+    else showCurrentVideo();
+
+    // ✅ URL update: gallery slug = base, media id = current item
+    const gallerySlug = item.gallery_slug || currentGalleryItems[0]?.gallery_slug || 'gallery';
+    const mediaId = item.id || index;
+    const baseUrl = `${window.location.origin}${window.location.pathname}`;
+    const newUrl = `${baseUrl}?${gallerySlug}=${mediaId}`;
 
     if (!skipHistory) {
-        setParam('gallery', item.id);
-        clearParams('youtubevideo');
+        history.pushState({ gallery: gallerySlug, media: mediaId }, '', newUrl);
     }
 }
-
-function openVideoModal(item, index = 0, itemsArray = [], skipHistory = false) {
-    currentGalleryItems = itemsArray;
-    currentItemIndex = index;
-    currentItemType = 'video';
-    videoModal.classList.add('show');
-
-    if (!skipHistory) {
-        setParam('youtubevideo', item.id);
-        clearParams('gallery');
-    }
-}
-
 
 
         // function closeImageModal() {
@@ -612,23 +610,18 @@ function openVideoModal(item, index = 0, itemsArray = [], skipHistory = false) {
         // }
 function closeImageModal() {
     imageModal.classList.remove('show');
-    const slug = new URL(window.location).searchParams.get('slug');
-    clearParams('gallery', 'youtubevideo');
-    if (slug) setParam('slug', slug);
-}
+    openModals--;
 
-function closeVideoModal() {
-    const iframe = videoModal.querySelector('iframe');
-    if (iframe) iframe.src = iframe.src; // stops YouTube playback
+    if (openModals <= 0) {
+        document.body.style.overflow = 'auto';
+        restoreScrollPosition();
+    }
 
-    videoModal.classList.remove('show');
-    const slug = new URL(window.location).searchParams.get('slug');
-    clearParams('gallery', 'youtubevideo');
-    if (slug) setParam('slug', slug);
-}
-
-function closeOverviewModal() {
-    clearParams('slug', 'gallery', 'youtubevideo');
+    // ✅ Reset URL to gallery only, no media
+    const gallerySlug = currentGalleryItems[0]?.gallery_slug || '';
+    const baseUrl = `${window.location.origin}${window.location.pathname}`;
+    const newUrl = gallerySlug ? `${baseUrl}?${gallerySlug}` : baseUrl;
+    history.pushState({}, '', newUrl);
 }
 
 function showCurrentImage() {
@@ -690,25 +683,24 @@ function showCurrentVideo() {
         }
 
 
-function navigateToNextItem() {
-    if (currentItemIndex < currentGalleryItems.length - 1) {
-        currentItemIndex++;
-        showCurrentMedia();
-        const current = currentGalleryItems[currentItemIndex];
-        if (currentItemType === 'image') setParam('gallery', current.id);
-        if (currentItemType === 'video') setParam('youtubevideo', current.id);
-    }
-}
-
 function navigateToPrevItem() {
     if (currentItemIndex > 0) {
         currentItemIndex--;
+        resetMediaView();
         showCurrentMedia();
-        const current = currentGalleryItems[currentItemIndex];
-        if (currentItemType === 'image') setParam('gallery', current.id);
-        if (currentItemType === 'video') setParam('youtubevideo', current.id);
+        updateDynamicMediaURL();
     }
 }
+
+function navigateToNextItem() {
+    if (currentItemIndex < currentGalleryItems.length - 1) {
+        currentItemIndex++;
+        resetMediaView();
+        showCurrentMedia();
+        updateDynamicMediaURL();
+    }
+}
+
 function resetMediaView() {
     scale = 1;
     offsetX = 0;
@@ -716,17 +708,18 @@ function resetMediaView() {
 }
 
 function showCurrentMedia() {
-    if (currentItemType === 'image') showCurrentImage();
-    else showCurrentVideo();
+    currentItemType === 'image' ? showCurrentImage() : showCurrentVideo();
 }
 
-function updateDynamicURL() {
+function updateDynamicMediaURL() {
+    const params = getQueryParams();
+    const slug = params.get('slug');
     const currentItem = currentGalleryItems[currentItemIndex];
-    if (currentItemType === 'image') {
-        updateURL('gallery', currentItem.id, true);
-    } else {
-        updateURL('youtubevideo', currentItem.id, true);
-    }
+    const newParams = new Map([
+        ['slug', slug],
+        ['gallery', currentItem.id]
+    ]);
+    updateURL(newParams, true); // replace instead of push
 }
 
 
@@ -971,8 +964,11 @@ function openOverviewModal(productId, skipHistory = false) {
     const slug = product.nav_title.toLowerCase().replace(/\s+/g, '');
 
     if (!skipHistory) {
-        setParam('slug', slug);
-        clearParams('gallery', 'youtubevideo');
+        const params = new Map([
+            ['slug', slug],
+            ['gallery', null] // remove media
+        ]);
+        updateURL(params);
     }
 
       let overviewModal = document.getElementById(`overview-modal-${product.id}`);
@@ -1077,30 +1073,39 @@ function openMediaModal(item, type, index = 0, itemsArray = [], skipHistory = fa
 
 
 
+function closeOverviewModal() {
+    document.querySelectorAll('.overview-modal').forEach(modal => modal.classList.remove('show'));
+    document.body.style.overflow = 'auto';
+    restoreScrollPosition();
 
+    // remove all params
+    const newParams = new Map([
+        ['slug', null],
+        ['gallery', null]
+    ]);
+    updateURL(newParams);
+}
 // --- Handle Direct Links ---
 function handleDirectLinks() {
     const params = getQueryParams();
     const slug = params.get('slug');
     const galleryId = params.get('gallery');
-    const youtubeId = params.get('youtubevideo');
     if (!slug) return;
 
     const product = galleryData.find(p => p.nav_title.toLowerCase().replace(/\s+/g, '') === slug);
     if (!product) return;
 
+    // open overview modal automatically
     openOverviewModal(product.id, true);
 
-    const items = [...(product.images || []), ...(product.videos || [])];
-
     if (galleryId) {
-        const img = (product.images || []).find(i => i.id == galleryId);
-        if (img) openImageModal(img, product.images.indexOf(img), product.images, true);
-    }
-
-    if (youtubeId) {
-        const vid = (product.videos || []).find(v => v.id == youtubeId);
-        if (vid) openVideoModal(vid, product.videos.indexOf(vid), product.videos, true);
+        const allItems = [...(product.images || []), ...(product.videos || [])];
+        const itemIndex = allItems.findIndex(i => i.id == galleryId);
+        if (itemIndex !== -1) {
+            const item = allItems[itemIndex];
+            const type = product.images.includes(item) ? 'image' : 'video';
+            openMediaModal(item, type, itemIndex, allItems, true);
+        }
     }
 }
 
