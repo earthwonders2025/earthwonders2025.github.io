@@ -914,7 +914,7 @@ modalContent.addEventListener("touchend", handlePinchEnd);
 
 
 // ---------- Modal open/close ----------
-let overviewOriginalUrl = null; // save the URL before any overview modal opens
+let overviewOriginalUrl = null; // global variable to store the original URL
 
 function openOverviewModal(productId, skipHistory = false) {
     saveScrollPosition();
@@ -927,15 +927,18 @@ function openOverviewModal(productId, skipHistory = false) {
     const baseUrl = `${window.location.origin}${window.location.pathname}`;
     const newUrl = `${baseUrl}?gallery=${slug}`;
 
-    // Save original URL only at first overview modal
-    if (!overviewOriginalUrl) overviewOriginalUrl = window.location.href;
+    // Save original URL only once
+    if (!overviewOriginalUrl) {
+        overviewOriginalUrl = baseUrl; // always restore to base URL
+    }
 
-  if (skipHistory) {
-    history.replaceState({}, '', baseUrl); // base page into history
-    history.pushState({ gallery: slug }, '', newUrl); // then gallery state
-} else {
-    history.pushState({ gallery: slug }, '', newUrl);
-}
+    if (!skipHistory) {
+        history.pushState({ gallery: slug }, '', newUrl);
+    } else {
+        // For direct links, replace current history with base, then push new state
+        history.replaceState({}, '', baseUrl);
+        history.pushState({ gallery: slug }, '', newUrl);
+    }
 
     let overviewModal = document.getElementById(`overview-modal-${productId}`);
     if (!overviewModal) {
@@ -943,23 +946,33 @@ function openOverviewModal(productId, skipHistory = false) {
         overviewModal.id = `overview-modal-${productId}`;
         overviewModal.className = 'overview-modal';
 
-        // Build modal contents
         let buttonsHTML = '';
         let bodyHTML = '';
 
         if (product.description_text?.trim()) {
-            bodyHTML += `<div class="overview-content active" id="overview-text-${productId}"><p>${product.description_text}</p></div>`;
+            bodyHTML += `
+                <div class="overview-content active" id="overview-text-${productId}">
+                  <p>${product.description_text}</p>
+                </div>`;
             buttonsHTML += `<button class="active" data-target="overview-text-${productId}">Overview</button>`;
         }
 
         if (product.images?.length) {
-            bodyHTML += `<div class="overview-content" id="overview-images-${productId}"><div class="images" id="overview-images-container-${productId}"></div><div class="pagination" id="overview-images-pagination-${productId}"></div></div>`;
+            bodyHTML += `
+                <div class="overview-content" id="overview-images-${productId}">
+                  <div class="images" id="overview-images-container-${productId}"></div>
+                  <div class="pagination" id="overview-images-pagination-${productId}"></div>
+                </div>`;
             const cls = buttonsHTML ? '' : 'active';
             buttonsHTML += `<button class="${cls}" data-target="overview-images-${productId}">Images</button>`;
         }
 
         if (product.videos?.length) {
-            bodyHTML += `<div class="overview-content" id="overview-videos-${productId}"><div class="images" id="overview-videos-container-${productId}"></div><div class="pagination" id="overview-videos-pagination-${productId}"></div></div>`;
+            bodyHTML += `
+                <div class="overview-content" id="overview-videos-${productId}">
+                  <div class="images" id="overview-videos-container-${productId}"></div>
+                  <div class="pagination" id="overview-videos-pagination-${productId}"></div>
+                </div>`;
             const cls = buttonsHTML ? '' : 'active';
             buttonsHTML += `<button class="${cls}" data-target="overview-videos-${productId}">Videos</button>`;
         }
@@ -1007,12 +1020,12 @@ function closeOverviewModal(modal) {
     if (openModals <= 0) {
         restoreScrollPosition();
         document.body.style.overflow = 'auto';
+    }
 
-        // Restore original URL only if we have it
-        if (overviewOriginalUrl) {
-            history.replaceState({}, '', overviewOriginalUrl);
-            overviewOriginalUrl = null;
-        }
+    // Restore URL to original base page
+    if (overviewOriginalUrl) {
+        history.replaceState({}, '', overviewOriginalUrl);
+        overviewOriginalUrl = null; // reset for next modal
     }
 }
 
