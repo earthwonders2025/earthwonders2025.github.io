@@ -1157,7 +1157,7 @@ function renderOverviewVideos(productId, videos) {
 // ---------- NavLogo Overview with Dynamic Data ----------
 let currentGalleryInNavLogo = null; // track open gallery
 let navLogoCurrentPage = 1;
-const navLogoItemsPerPage = 6;
+const navLogoItemsPerPage = 5;
 
 function openNavLogoOverviewModal(skipHistory = false) {
     if (openModals === 0) saveScrollPosition();
