@@ -1225,7 +1225,7 @@ function renderNavLogoGalleryPage(page = 1) {
         const image = item.images?.[0]?.image_url || item.main_image_url || '';
         if (!image) return; // skip if no image
 
-        const shortDesc = item.short_desc || '';
+        const shortDesc = item.subtitle || '';
         html += `
             <div class="gallery-item" style="border:1px solid #333;border-radius:8px;overflow:hidden;">
                 <img src="${image}" alt="${item.nav_title}" style="width:100%;height:150px;object-fit:cover;" />
