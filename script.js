@@ -1016,7 +1016,7 @@ function openNavLogoOverviewModal(skipHistory = false) {
 
         const logoText = document.getElementById("navLogo")?.textContent.trim() || "Gallery";
 
-     overviewModal.innerHTML = `
+overviewModal.innerHTML = `
     <div class="overview-header">
         <h2>${logoText}</h2>
         <button class="close-navlogo">×</button>
@@ -1034,6 +1034,14 @@ function openNavLogoOverviewModal(skipHistory = false) {
             <!-- Gallery Grid -->
             <div id="navlogo-gallery-container"></div>
             <div class="pagination" id="navlogo-gallery-pagination"></div>
+
+            <!-- Outro Heading & Text -->
+            <div class="navlogo-outro" style="margin-top:1.5rem; text-align:center; color:#ccc;">
+                <h3 style="margin-bottom:0.5rem;">Stay Inspired</h3>
+                <p style="font-size:0.95rem; max-width:600px; margin:0 auto;">
+                    Keep exploring and enjoy the beauty of our curated galleries. Every collection tells a story of the Earth’s wonders.
+                </p>
+            </div>
         </section>
     </div>
 `;
