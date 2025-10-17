@@ -132,59 +132,6 @@ if (slug) {
     }
 }
 
-// function renderGalleries(galleries) {
-//     const container = document.getElementById("product-content");
-//     container.innerHTML = "";
-
-//     if (galleries.length === 0) return;
-
-//     // 1️⃣ Keep the very first gallery fixed at the top
-//     const featuredGallery = galleries[0];
-//     const featuredHero = createHeroElement(featuredGallery);
-//     container.appendChild(featuredHero);
-
-//     // 2️⃣ Sort the rest so newest comes first
-
-
-// //  const rest = galleries.slice(1).sort((a, b) => new Date(a.created_at) - new Date(b.created_at)) // ASC by date
-// //  const rest = galleries.slice(1).sort((a, b) => new Date(b.created_at) - new Date(a.created_at))// des
-
-//     // const rest = galleries.slice(1).sort((a, b) => b.id - a.id); 
-//     const rest = galleries.slice(1).sort((a, b) => a.id - b.id);
-
-//     // If API has created_at, use:
-//     // const rest = galleries.slice(1).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-
-//     // 3️⃣ Render the rest under the featured
-//     rest.forEach(gallery => {
-//         const hero = createHeroElement(gallery);
-//         container.appendChild(hero);
-//     });
-
-//     setupParallaxEffect();
-// }
-
-// function createHeroElement(gallery) {
-//     const hero = document.createElement('div');
-//     hero.className = 'hero';
-//     hero.id = gallery.nav_title.toLowerCase().replace(/\s+/g, '-');
-
-//     hero.innerHTML = `
-//         <img class="parallax-image" src="${gallery.main_image_url}" alt="${gallery.title}">
-//         <div class="hero-text parallax-text">
-//             <h1>${gallery.title}</h1>
-//             <h2>${gallery.subtitle || ''}</h2>
-//             <button class="explore-more" data-id="${gallery.id}">Explore More</button>
-//         </div>
-//     `;
-
-//     hero.querySelector('.explore-more')
-//         .addEventListener('click', () => openOverviewModal(gallery.id));
-
-//     return hero;
-// }
-
-
 function updateMetaTags(gallery) {
     if (!gallery) return;
 
@@ -803,130 +750,11 @@ modalContent.addEventListener("touchend", handlePinchEnd);
         }
 
 //         /* ---------- OVERVIEW MODAL FUNCTIONS ---------- */
-// function openOverviewModal(productId) {
-//     saveScrollPosition();
-//     openModals++;
-
-//     const product = galleryData.find(g => g.id === productId); // use find, not index
-//     if (!product) return;
-
-//     let overviewModal = document.getElementById(`overview-modal-${productId}`);
-//     if (!overviewModal) {
-//         overviewModal = document.createElement('div');
-//         overviewModal.id = `overview-modal-${productId}`;
-//         overviewModal.className = 'overview-modal';
-//    let buttonsHTML = "";
-// let bodyHTML = "";
-
-// // ✅ Overview text (only if exists)
-// if (product.description_text && product.description_text.trim() !== "") {
-//     bodyHTML += `
-//         <div class="overview-content active" id="overview-text-${productId}">
-//             <p>${product.description_text}</p>
-//         </div>
-//     `;
-//     buttonsHTML += `<button class="active" data-target="overview-text-${productId}">Overview</button>`;
-// }
-
-// // ✅ Images (only if images exist)
-// if (product.images && product.images.length > 0) {
-//     bodyHTML += `
-//         <div class="overview-content" id="overview-images-${productId}">
-//             <div class="images" id="overview-images-container-${productId}"></div>
-//             <div class="pagination" id="overview-images-pagination-${productId}"></div>
-//         </div>
-//     `;
-//     // Only active if no text
-//     const activeClass = !buttonsHTML ? "active" : "";
-//     buttonsHTML += `<button class="${activeClass}" data-target="overview-images-${productId}">Images</button>`;
-// }
-
-// // ✅ Videos (only if videos exist)
-// if (product.videos && product.videos.length > 0) {
-//     bodyHTML += `
-//         <div class="overview-content" id="overview-videos-${productId}">
-//             <div class="images" id="overview-videos-container-${productId}"></div>
-//             <div class="pagination" id="overview-videos-pagination-${productId}"></div>
-//         </div>
-//     `;
-//     const activeClass = !buttonsHTML ? "active" : "";
-//     buttonsHTML += `<button class="${activeClass}" data-target="overview-videos-${productId}">Videos</button>`;
-// }
-
-// // ✅ Build modal dynamically
-// overviewModal.innerHTML = `
-//     <div class="overview-header">
-//         <h2>${product.description_title || "Details"}</h2>
-//         <button class="close-overview">×</button>
-//     </div>
-//     <div class="overview-body">
-//         ${bodyHTML || "<p style='text-align:center;'>No details available.</p>"}
-//     </div>
-//     <div class="overview-pagination">
-//         ${buttonsHTML}
-//     </div>
-// `;
-
-//         document.body.appendChild(overviewModal);
-
-//         // Close button
-// overviewModal.querySelector('.close-overview').addEventListener('click', () => {
-//     overviewModal.classList.remove('show');
-//     overviewModal.remove();
-//     openModals--;
-
-//     if (openModals <= 0) {
-//         document.body.style.overflow = 'auto';
-
-//         // 🧠 Delay to allow DOM reflow before restoring scroll
-//         setTimeout(() => {
-//             requestAnimationFrame(() => {
-//                 window.scrollTo({ top: scrollPosition, behavior: 'instant' });
-//             });
-//         }, 300);
-//     }
-// });
-
-
-//         // Close on clicking outside
-//         overviewModal.addEventListener('click', (e) => {
-//             if (e.target === overviewModal) {
-//                 overviewModal.classList.remove('show');
-//                 overviewModal.remove();
-//                 openModals--;
-//                 if (openModals <= 0) {
-//                     document.body.style.overflow = 'auto';
-//                     restoreScrollPosition();
-//                 }
-//             }
-//         });
-
-//         // Tab switching
-//         overviewModal.querySelectorAll('.overview-pagination button').forEach(button => {
-//             button.addEventListener('click', () => {
-//                 overviewModal.querySelectorAll('.overview-pagination button').forEach(btn => btn.classList.remove('active'));
-//                 button.classList.add('active');
-//                 overviewModal.querySelectorAll('.overview-content').forEach(c => c.classList.remove('active'));
-//                 document.getElementById(button.dataset.target).classList.add('active');
-//             });
-//         });
-
-//         // Render images/videos
-//         renderOverviewImages(productId, product.images || []);
-//         renderOverviewVideos(productId, product.videos || []);
-//     }
-
-//     overviewModal.classList.add('show');
-//     document.body.style.overflow = 'hidden';
-// }
-
-
-// ---------- Modal open/close ----------
-let overviewOriginalUrl = null; // global variable to store the original URL
-let lastScrollY = 0;            // global scroll position
+/* ---------- OVERVIEW MODAL FUNCTIONS ---------- */
+let overviewOriginalUrl = null; // store original URL
+let lastScrollY = 0;
 
 function openOverviewModal(productId, skipHistory = false) {
-    // save scroll before opening modal
     if (openModals === 0) saveScrollPosition();
     openModals++;
 
@@ -937,15 +765,11 @@ function openOverviewModal(productId, skipHistory = false) {
     const baseUrl = `${window.location.origin}${window.location.pathname}`;
     const newUrl = `${baseUrl}?gallery=${slug}`;
 
-    // Save original URL only once
-    if (!overviewOriginalUrl) {
-        overviewOriginalUrl = baseUrl;
-    }
+    if (!overviewOriginalUrl) overviewOriginalUrl = baseUrl;
 
     if (!skipHistory) {
         history.pushState({ gallery: slug }, '', newUrl);
     } else {
-        // For direct links or refresh, replace current history with base, then push new state
         history.replaceState({}, '', baseUrl);
         history.pushState({ gallery: slug }, '', newUrl);
     }
@@ -962,7 +786,7 @@ function openOverviewModal(productId, skipHistory = false) {
         if (product.description_text?.trim()) {
             bodyHTML += `
                 <div class="overview-content active" id="overview-text-${productId}">
-                  <p>${product.description_text}</p>
+                    <p>${product.description_text}</p>
                 </div>`;
             buttonsHTML += `<button class="active" data-target="overview-text-${productId}">Overview</button>`;
         }
@@ -970,8 +794,8 @@ function openOverviewModal(productId, skipHistory = false) {
         if (product.images?.length) {
             bodyHTML += `
                 <div class="overview-content" id="overview-images-${productId}">
-                  <div class="images" id="overview-images-container-${productId}"></div>
-                  <div class="pagination" id="overview-images-pagination-${productId}"></div>
+                    <div class="images" id="overview-images-container-${productId}"></div>
+                    <div class="pagination" id="overview-images-pagination-${productId}"></div>
                 </div>`;
             const cls = buttonsHTML ? '' : 'active';
             buttonsHTML += `<button class="${cls}" data-target="overview-images-${productId}">Images</button>`;
@@ -980,8 +804,8 @@ function openOverviewModal(productId, skipHistory = false) {
         if (product.videos?.length) {
             bodyHTML += `
                 <div class="overview-content" id="overview-videos-${productId}">
-                  <div class="images" id="overview-videos-container-${productId}"></div>
-                  <div class="pagination" id="overview-videos-pagination-${productId}"></div>
+                    <div class="images" id="overview-videos-container-${productId}"></div>
+                    <div class="pagination" id="overview-videos-pagination-${productId}"></div>
                 </div>`;
             const cls = buttonsHTML ? '' : 'active';
             buttonsHTML += `<button class="${cls}" data-target="overview-videos-${productId}">Videos</button>`;
@@ -1028,54 +852,49 @@ function closeOverviewModal(modal) {
     document.body.style.overflow = 'auto';
     openModals--;
 
-    if (openModals <= 0) {
-        restoreScrollPosition(); // scroll restored properly even for direct links
-    }
+    if (openModals <= 0) restoreScrollPosition();
 
-    // Restore URL to original base page
     if (overviewOriginalUrl) {
         history.replaceState({}, '', overviewOriginalUrl);
-        overviewOriginalUrl = null; // reset for next modal
+        overviewOriginalUrl = null;
     }
 }
 
-// ---------- handle direct links ----------
+/* ---------- DIRECT LINKS HANDLER ---------- */
 function handleDirectGalleryLinks(data) {
-  const urlParams = new URLSearchParams(window.location.search);
-  let slug = urlParams.get("gallery");
+    const urlParams = new URLSearchParams(window.location.search);
+    let slug = urlParams.get("gallery");
 
-  if (!slug) {
-    const match = window.location.pathname.match(/\/gallery\/([^/]+)/);
-    if (match) slug = match[1];
-  }
+    if (!slug) {
+        const match = window.location.pathname.match(/\/gallery\/([^/]+)/);
+        if (match) slug = match[1];
+    }
 
-  if (!slug) return;
+    if (!slug) return;
 
-  if (slug === "navlogo") {
-    setTimeout(() => openNavLogoOverviewModal(true), 400);
-    return;
-  }
+    if (slug === "navlogo") {
+        setTimeout(() => openNavLogoOverviewModal(true), 400);
+        return;
+    }
 
-  const gallery = data.find(g => g.nav_title.toLowerCase().replace(/\s+/g, "") === slug);
-  if (!gallery) return;
+    const gallery = data.find(g => g.nav_title.toLowerCase().replace(/\s+/g, "") === slug);
+    if (!gallery) return;
 
-  const heroId = gallery.nav_title.toLowerCase().replace(/\s+/g, "-");
-  const hero = document.getElementById(heroId);
-  if (hero) hero.scrollIntoView({ behavior: "smooth", block: "center" });
+    const heroId = gallery.nav_title.toLowerCase().replace(/\s+/g, "-");
+    const hero = document.getElementById(heroId);
+    if (hero) hero.scrollIntoView({ behavior: "smooth", block: "center" });
 
-  setTimeout(() => openOverviewModal(gallery.id, true), 600);
+    setTimeout(() => openOverviewModal(gallery.id, true), 600);
 }
 
-
-
-// Images
+/* ---------- RENDER OVERVIEW IMAGES ---------- */
 function renderOverviewImages(productId, images) {
     const container = document.getElementById(`overview-images-container-${productId}`);
     const paginationContainer = document.getElementById(`overview-images-pagination-${productId}`);
-    if (!container) return; 
+    if (!container) return;
     let currentPage = 1;
     const totalPages = Math.ceil(images.length / IMAGES_PER_PAGE);
-    
+
     function render() {
         const start = (currentPage - 1) * IMAGES_PER_PAGE;
         const end = start + IMAGES_PER_PAGE;
@@ -1087,8 +906,7 @@ function renderOverviewImages(productId, images) {
             const wrap = document.createElement('div');
             const el = document.createElement('img');
             el.src = img.image_url;
-            el.alt = img.caption;
-            // Pass only the current page items and relative index
+            el.alt = img.caption || '';
             el.onclick = () => openImageModal(img, 'image', i, pageImages);
 
             wrap.appendChild(el);
@@ -1096,7 +914,6 @@ function renderOverviewImages(productId, images) {
             cap.className = 'caption'; 
             cap.textContent = img.caption || '';
             wrap.appendChild(cap);
-
             container.appendChild(wrap);
         });
 
@@ -1105,21 +922,18 @@ function renderOverviewImages(productId, images) {
             render(); 
         });
     }
-    
+
     render();
 }
 
-
-// ========================
-// RENDER OVERVIEW VIDEOS
-// ========================
+/* ---------- RENDER OVERVIEW VIDEOS ---------- */
 function renderOverviewVideos(productId, videos) {
     const container = document.getElementById(`overview-videos-container-${productId}`);
     const paginationContainer = document.getElementById(`overview-videos-pagination-${productId}`);
     if (!container) return;
     let currentPage = 1;
     const totalPages = Math.ceil(videos.length / VIDEOS_PER_PAGE);
-    
+
     function render() {
         const start = (currentPage - 1) * VIDEOS_PER_PAGE;
         const end = start + VIDEOS_PER_PAGE;
@@ -1132,7 +946,6 @@ function renderOverviewVideos(productId, videos) {
             const thumb = document.createElement('img');
             thumb.src = `https://img.youtube.com/vi/${v.youtube_id}/hqdefault.jpg`;
             thumb.alt = v.caption || '';
-            // Pass only the current page items and relative index
             thumb.onclick = () => openImageModal(v, 'video', i, pageVideos);
 
             wrap.appendChild(thumb);
@@ -1140,7 +953,6 @@ function renderOverviewVideos(productId, videos) {
             cap.className = 'caption'; 
             cap.textContent = v.caption || '';
             wrap.appendChild(cap);
-
             container.appendChild(wrap);
         });
 
@@ -1149,13 +961,12 @@ function renderOverviewVideos(productId, videos) {
             render(); 
         });
     }
-    
+
     render();
 }
 
-// ---------- NavLogo Overview with Hero Images and Text ----------
-// ---------- NavLogo Overview with Dynamic Data ----------
-let currentGalleryInNavLogo = null; // track open gallery
+/* ---------- NAVLOGO MODAL ---------- */
+let currentGalleryInNavLogo = null;
 let navLogoCurrentPage = 1;
 const navLogoItemsPerPage = 5;
 
@@ -1168,9 +979,8 @@ function openNavLogoOverviewModal(skipHistory = false) {
     const navLogoSlug = "navlogo";
     const newUrl = `${baseUrl}?gallery=${navLogoSlug}`;
 
-    if (!skipHistory) {
-        history.pushState({ gallery: navLogoSlug }, "", newUrl);
-    } else {
+    if (!skipHistory) history.pushState({ gallery: navLogoSlug }, "", newUrl);
+    else {
         history.replaceState({}, "", baseUrl);
         history.pushState({ gallery: navLogoSlug }, "", newUrl);
     }
@@ -1198,7 +1008,6 @@ function openNavLogoOverviewModal(skipHistory = false) {
 
         document.body.appendChild(overviewModal);
 
-        // Close NavLogo modal
         overviewModal.querySelector(".close-navlogo").addEventListener("click", () => closeNavLogoOverviewModal());
         overviewModal.addEventListener("click", e => {
             if (e.target === overviewModal) closeNavLogoOverviewModal();
@@ -1210,7 +1019,6 @@ function openNavLogoOverviewModal(skipHistory = false) {
     document.body.style.overflow = "hidden";
 }
 
-// ---------- Render NavLogo Gallery Table from galleryData ----------
 function renderNavLogoGalleryPage(page = 1) {
     const container = document.getElementById("navlogo-gallery-container");
     const paginationContainer = document.getElementById("navlogo-gallery-pagination");
@@ -1223,8 +1031,7 @@ function renderNavLogoGalleryPage(page = 1) {
     let html = '<div class="gallery-table" style="display:grid;gap:1rem;grid-template-columns:repeat(auto-fill,minmax(200px,1fr))">';
     pageItems.forEach(item => {
         const image = item.images?.[0]?.image_url || item.main_image_url || '';
-        if (!image) return; // skip if no image
-
+        if (!image) return;
         const shortDesc = item.subtitle || '';
         html += `
             <div class="gallery-item" style="border:1px solid #333;border-radius:8px;overflow:hidden;">
@@ -1238,10 +1045,8 @@ function renderNavLogoGalleryPage(page = 1) {
         `;
     });
     html += '</div>';
-
     container.innerHTML = html;
 
-    // Pagination
     const totalPages = Math.ceil(galleryData.length / navLogoItemsPerPage);
     let paginationHTML = '';
     for (let i = 1; i <= totalPages; i++) {
@@ -1250,39 +1055,33 @@ function renderNavLogoGalleryPage(page = 1) {
     paginationContainer.innerHTML = paginationHTML;
 }
 
-
 function changeNavLogoPage(page) {
     navLogoCurrentPage = page;
     renderNavLogoGalleryPage(page);
 }
 
-// ---------- Open gallery from NavLogo ----------
 function openGalleryFromNavLogo(productId) {
-    currentGalleryInNavLogo = productId; // track open gallery
+    currentGalleryInNavLogo = productId;
     const baseUrl = `${window.location.origin}${window.location.pathname}`;
     const navLogoModal = document.getElementById("overview-modal-navlogo");
 
-    openOverviewModal(productId); // normal gallery modal
+    openOverviewModal(productId);
 
-    // Hook close specifically for this gallery modal
     const galleryModal = document.getElementById(`overview-modal-${productId}`);
     if (!galleryModal) return;
 
     const closeBtn = galleryModal.querySelector(".close-overview");
-    const originalClose = closeBtn.onclick;
     closeBtn.onclick = function () {
         closeOverviewModal(galleryModal);
         currentGalleryInNavLogo = null;
 
-        // Restore NavLogo URL and keep modal open
         if (navLogoModal) {
             history.replaceState({ gallery: "navlogo" }, "", `${baseUrl}?gallery=navlogo`);
-            document.body.style.overflow = "hidden"; // keep body scroll hidden
+            document.body.style.overflow = "hidden";
         }
     };
 }
 
-// ---------- Close NavLogo ----------
 function closeNavLogoOverviewModal() {
     const navLogoModal = document.getElementById("overview-modal-navlogo");
     if (!navLogoModal) return;
@@ -1296,11 +1095,9 @@ function closeNavLogoOverviewModal() {
     }
 
     const baseUrl = `${window.location.origin}${window.location.pathname}`;
-
-    if (!currentGalleryInNavLogo) {
-        history.replaceState({}, "", baseUrl);
-    }
+    if (!currentGalleryInNavLogo) history.replaceState({}, "", baseUrl);
 }
+
     // 
     // 
 
