@@ -109,15 +109,33 @@ async function fetchGalleries() {
         renderGalleries(data);       // render galleries first
         setupNavigation(data);       // setup nav links
 
-        // Delay direct link handling slightly to ensure DOM elements exist
-        setTimeout(() => {
-            handleDirectGalleryLinks(galleryData);
-        }, 200); // 200ms delay to allow DOM to render heroes
+        // Wait until all heroes exist in DOM
+        await waitForHeroesToRender(data);
+
+        // Handle direct links
+        handleDirectGalleryLinks(galleryData);
 
     } catch (error) {
         document.getElementById("product-content").innerHTML =
             `<p style="color:red;">${error.message}</p>`;
     }
+}
+function waitForHeroesToRender(data) {
+    const heroIds = data.map(g => g.nav_title.toLowerCase().replace(/\s+/g, '-'));
+    return new Promise(resolve => {
+        const interval = setInterval(() => {
+            const allExist = heroIds.every(id => document.getElementById(id));
+            if (allExist) {
+                clearInterval(interval);
+                resolve();
+            }
+        }, 50); // check every 50ms
+        // timeout fallback after 3s
+        setTimeout(() => {
+            clearInterval(interval);
+            resolve();
+        }, 3000);
+    });
 }
 
 
