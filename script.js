@@ -992,7 +992,7 @@ let currentGalleryInNavLogo = null; // track open gallery
 let navLogoCurrentPage = 1;
 const navLogoItemsPerPage = 5;
 
-function openNavLogoOverviewModal(skipHistory = false) {
+async function openNavLogoOverviewModal(skipHistory = false) {
     if (openModals === 0) saveScrollPosition();
     openModals++;
     currentGalleryInNavLogo = null;
@@ -1008,6 +1008,16 @@ function openNavLogoOverviewModal(skipHistory = false) {
         history.pushState({ gallery: navLogoSlug }, "", newUrl);
     }
 
+    // Fetch dynamic text from API
+    const res = await fetch("https://earthwonders2025.pythonanywhere.com/api/settings/");
+    const settingsData = await res.json();
+    const settings = settingsData[0] || {};
+
+    const introHeading = settings.navlogo_intro_heading || "Explore Our Galleries";
+    const introText = settings.navlogo_intro_text || "Discover stunning photography and videos from all around the world.";
+    const outroHeading = settings.navlogo_outro_heading || "Stay Inspired";
+    const outroText = settings.navlogo_outro_text || "Keep exploring and enjoy the beauty of our curated galleries.";
+
     let overviewModal = document.getElementById("overview-modal-navlogo");
     if (!overviewModal) {
         overviewModal = document.createElement("div");
@@ -1016,50 +1026,42 @@ function openNavLogoOverviewModal(skipHistory = false) {
 
         const logoText = document.getElementById("navLogo")?.textContent.trim() || "Gallery";
 
-overviewModal.innerHTML = `
-    <div class="overview-header">
-        <h2>${logoText}</h2>
-        <button class="close-navlogo">×</button>
-    </div>
-    <div class="overview-body footer-like">
-        <section class="footer-block">
-            <!-- Intro Heading & Text -->
-            <div class="navlogo-intro" style="margin-bottom:1.5rem; text-align:center; color:#ccc;">
-                <h3 style="margin-bottom:0.5rem;">Explore Our Galleries</h3>
-                <p style="font-size:0.95rem; max-width:600px; margin:0 auto;">
-                    Discover stunning photography and videos from all around the world. Click any gallery below to view details, images, and videos.
-                </p>
+        overviewModal.innerHTML = `
+            <div class="overview-header">
+                <h2>${logoText}</h2>
+                <button class="close-navlogo">×</button>
             </div>
-
-            <!-- Gallery Grid -->
-            <div id="navlogo-gallery-container"></div>
-            <div class="pagination" id="navlogo-gallery-pagination"></div>
-
-            <!-- Outro Heading & Text -->
-            <div class="navlogo-outro" style="margin-top:1.5rem; text-align:center; color:#ccc;">
-                <h3 style="margin-bottom:0.5rem;">Stay Inspired</h3>
-                <p style="font-size:0.95rem; max-width:600px; margin:0 auto;">
-                    Keep exploring and enjoy the beauty of our curated galleries. Every collection tells a story of the Earth’s wonders.
-                </p>
+            <div class="overview-body footer-like">
+                <section class="footer-block">
+                    <div class="navlogo-intro" style="margin-bottom:1.5rem; text-align:center; color:#ccc;">
+                        <h3 style="margin-bottom:0.5rem;">${introHeading}</h3>
+                        <p style="font-size:0.95rem; max-width:600px; margin:0 auto;">
+                            ${introText}
+                        </p>
+                    </div>
+                    <div id="navlogo-gallery-container"></div>
+                    <div class="pagination" id="navlogo-gallery-pagination"></div>
+                    <div class="navlogo-outro" style="margin-top:1.5rem; text-align:center; color:#ccc;">
+                        <h3 style="margin-bottom:0.5rem;">${outroHeading}</h3>
+                        <p style="font-size:0.95rem; max-width:600px; margin:0 auto;">
+                            ${outroText}
+                        </p>
+                    </div>
+                </section>
             </div>
-        </section>
-    </div>
-`;
-
+        `;
 
         document.body.appendChild(overviewModal);
 
-        // Close NavLogo modal
         overviewModal.querySelector(".close-navlogo").addEventListener("click", () => closeNavLogoOverviewModal());
-        overviewModal.addEventListener("click", e => {
-            if (e.target === overviewModal) closeNavLogoOverviewModal();
-        });
+        overviewModal.addEventListener("click", e => { if (e.target === overviewModal) closeNavLogoOverviewModal(); });
     }
 
     renderNavLogoGalleryPage(navLogoCurrentPage);
     overviewModal.classList.add("show");
     document.body.style.overflow = "hidden";
 }
+
 
 // ---------- Render NavLogo Gallery Table from galleryData ----------
 function renderNavLogoGalleryPage(page = 1) {
