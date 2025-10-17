@@ -1013,10 +1013,10 @@ async function openNavLogoOverviewModal(skipHistory = false) {
     const settingsData = await res.json();
     const settings = settingsData[0] || {};
 
-    const introHeading = settings.navlogo_intro_heading || "Explore Our Galleries";
-    const introText = settings.navlogo_intro_text || "Discover stunning photography and videos from all around the world.";
-    const outroHeading = settings.navlogo_outro_heading || "Stay Inspired";
-    const outroText = settings.navlogo_outro_text || "Keep exploring and enjoy the beauty of our curated galleries.";
+    const introHeading = settings.navlogo_intro_heading || "";
+    const introText = settings.navlogo_intro_text || "";
+    const outroHeading = settings.navlogo_outro_heading || "";
+    const outroText = settings.navlogo_outro_text || "";
 
     let overviewModal = document.getElementById("overview-modal-navlogo");
     if (!overviewModal) {
