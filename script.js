@@ -1016,18 +1016,28 @@ function openNavLogoOverviewModal(skipHistory = false) {
 
         const logoText = document.getElementById("navLogo")?.textContent.trim() || "Gallery";
 
-        overviewModal.innerHTML = `
-            <div class="overview-header">
-                <h2>${logoText}</h2>
-                <button class="close-navlogo">×</button>
+     overviewModal.innerHTML = `
+    <div class="overview-header">
+        <h2>${logoText}</h2>
+        <button class="close-navlogo">×</button>
+    </div>
+    <div class="overview-body footer-like">
+        <section class="footer-block">
+            <!-- Intro Heading & Text -->
+            <div class="navlogo-intro" style="margin-bottom:1.5rem; text-align:center; color:#ccc;">
+                <h3 style="margin-bottom:0.5rem;">Explore Our Galleries</h3>
+                <p style="font-size:0.95rem; max-width:600px; margin:0 auto;">
+                    Discover stunning photography and videos from all around the world. Click any gallery below to view details, images, and videos.
+                </p>
             </div>
-            <div class="overview-body footer-like">
-                <section class="footer-block">
-                    <div id="navlogo-gallery-container"></div>
-                    <div class="pagination" id="navlogo-gallery-pagination"></div>
-                </section>
-            </div>
-        `;
+
+            <!-- Gallery Grid -->
+            <div id="navlogo-gallery-container"></div>
+            <div class="pagination" id="navlogo-gallery-pagination"></div>
+        </section>
+    </div>
+`;
+
 
         document.body.appendChild(overviewModal);
 
