@@ -106,31 +106,20 @@ async function fetchGalleries() {
         const data = await response.json();
 
         galleryData = data; // store globally
-        renderGalleries(data);
-        setupNavigation(data);
-        handleDirectGalleryLinks(galleryData)
-        // --- handle direct links from ?gallery=slug or /gallery/slug ---
-const urlParams = new URLSearchParams(window.location.search);
-let slug = urlParams.get('gallery');
+        renderGalleries(data);       // render galleries first
+        setupNavigation(data);       // setup nav links
 
-if (!slug) {
-  const match = window.location.pathname.match(/\/gallery\/([^/]+)/);
-  if (match) slug = match[1];
-}
+        // Delay direct link handling slightly to ensure DOM elements exist
+        setTimeout(() => {
+            handleDirectGalleryLinks(galleryData);
+        }, 200); // 200ms delay to allow DOM to render heroes
 
-if (slug) {
-  const gallery = data.find(g => g.nav_title.toLowerCase().replace(/\s+/g, '') === slug);
-  if (gallery) {
-    const hero = document.getElementById(gallery.nav_title.toLowerCase().replace(/\s+/g, '-'));
-    if (hero) hero.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    setTimeout(() => openOverviewModal(gallery.id, true), 600);
-  }
-}
     } catch (error) {
         document.getElementById("product-content").innerHTML =
             `<p style="color:red;">${error.message}</p>`;
     }
 }
+
 
 function updateMetaTags(gallery) {
     if (!gallery) return;
@@ -873,7 +862,7 @@ function handleDirectGalleryLinks(data) {
     if (!slug) return;
 
     if (slug === "navlogo") {
-        setTimeout(() => openNavLogoOverviewModal(true), 400);
+        requestAnimationFrame(() => openNavLogoOverviewModal(true));
         return;
     }
 
@@ -884,8 +873,9 @@ function handleDirectGalleryLinks(data) {
     const hero = document.getElementById(heroId);
     if (hero) hero.scrollIntoView({ behavior: "smooth", block: "center" });
 
-    setTimeout(() => openOverviewModal(gallery.id, true), 600);
+    requestAnimationFrame(() => openOverviewModal(gallery.id, true));
 }
+
 
 /* ---------- RENDER OVERVIEW IMAGES ---------- */
 function renderOverviewImages(productId, images) {
