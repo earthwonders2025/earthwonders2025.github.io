@@ -1008,15 +1008,15 @@ async function openNavLogoOverviewModal(skipHistory = false) {
         history.pushState({ gallery: navLogoSlug }, "", newUrl);
     }
 
-    // Fetch dynamic text from API
-    const res = await fetch("https://earthwonders2025.pythonanywhere.com/api/settings/");
-    const settingsData = await res.json();
-    const settings = settingsData[0] || {};
-
-    const introHeading = settings.navlogo_intro_heading || "";
-    const introText = settings.navlogo_intro_text || "";
-    const outroHeading = settings.navlogo_outro_heading || "";
-    const outroText = settings.navlogo_outro_text || "";
+    // Fetch NavLogo text dynamically
+    const response = await fetch("/api/navlogo-text/");
+    const data = await response.json();
+    const textData = data[0] || {};
+    
+    const introHeading = textData.intro_heading || "";
+    const introText = textData.intro_text || "";
+    const outroHeading = textData.outro_heading || "";
+    const outroText = textData.outro_text || "";
 
     let overviewModal = document.getElementById("overview-modal-navlogo");
     if (!overviewModal) {
