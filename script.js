@@ -1008,15 +1008,25 @@ async function openNavLogoOverviewModal(skipHistory = false) {
         history.pushState({ gallery: navLogoSlug }, "", newUrl);
     }
 
-    // Fetch NavLogo text dynamically
-    const response = await fetch("/api/navlogo-text/");
-    const data = await response.json();
-    const textData = data[0] || {};
-    
-    const introHeading = textData.intro_heading || "";
-    const introText = textData.intro_text || "";
-    const outroHeading = textData.outro_heading || "";
-    const outroText = textData.outro_text || "";
+    // Fetch SiteSetting data for NavLogo modal
+    let introHeading = "";
+    let introText = "";
+    let outroHeading = "";
+    let outroText = "";
+
+    try {
+        const response = await fetch("/api/site-settings/");
+        const data = await response.json();
+        if (data.length > 0) {
+            const siteSetting = data[0];
+            introHeading = siteSetting.navlogo_intro_heading || "";
+            introText = siteSetting.navlogo_intro_text || "";
+            outroHeading = siteSetting.navlogo_outro_heading || "";
+            outroText = siteSetting.navlogo_outro_text || "";
+        }
+    } catch (err) {
+        console.error("Failed to fetch site settings:", err);
+    }
 
     let overviewModal = document.getElementById("overview-modal-navlogo");
     if (!overviewModal) {
@@ -1053,8 +1063,11 @@ async function openNavLogoOverviewModal(skipHistory = false) {
 
         document.body.appendChild(overviewModal);
 
+        // Close NavLogo modal
         overviewModal.querySelector(".close-navlogo").addEventListener("click", () => closeNavLogoOverviewModal());
-        overviewModal.addEventListener("click", e => { if (e.target === overviewModal) closeNavLogoOverviewModal(); });
+        overviewModal.addEventListener("click", e => {
+            if (e.target === overviewModal) closeNavLogoOverviewModal();
+        });
     }
 
     renderNavLogoGalleryPage(navLogoCurrentPage);
