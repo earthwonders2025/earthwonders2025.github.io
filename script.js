@@ -1008,7 +1008,7 @@ async function openNavLogoOverviewModal(skipHistory = false) {
         history.pushState({ gallery: navLogoSlug }, "", newUrl);
     }
 
-    // Fetch SiteSetting data for NavLogo modal
+    // Fetch SiteSetting data
     let introHeading = "";
     let introText = "";
     let outroHeading = "";
@@ -1029,51 +1029,55 @@ async function openNavLogoOverviewModal(skipHistory = false) {
     }
 
     let overviewModal = document.getElementById("overview-modal-navlogo");
+
+    // Create modal if it doesn't exist
     if (!overviewModal) {
         overviewModal = document.createElement("div");
         overviewModal.id = "overview-modal-navlogo";
         overviewModal.className = "overview-modal";
-
-        const logoText = document.getElementById("navLogo")?.textContent.trim() || "Gallery";
-
-        overviewModal.innerHTML = `
-            <div class="overview-header">
-                <h2>${logoText}</h2>
-                <button class="close-navlogo">×</button>
-            </div>
-            <div class="overview-body footer-like">
-                <section class="footer-block">
-                    <div class="navlogo-intro" style="margin-bottom:1.5rem; text-align:center; color:#ccc;">
-                        <h3 style="margin-bottom:0.5rem;">${introHeading}</h3>
-                        <p style="font-size:0.95rem; max-width:600px; margin:0 auto;">
-                            ${introText}
-                        </p>
-                    </div>
-                    <div id="navlogo-gallery-container"></div>
-                    <div class="pagination" id="navlogo-gallery-pagination"></div>
-                    <div class="navlogo-outro" style="margin-top:1.5rem; text-align:center; color:#ccc;">
-                        <h3 style="margin-bottom:0.5rem;">${outroHeading}</h3>
-                        <p style="font-size:0.95rem; max-width:600px; margin:0 auto;">
-                            ${outroText}
-                        </p>
-                    </div>
-                </section>
-            </div>
-        `;
-
         document.body.appendChild(overviewModal);
 
         // Close NavLogo modal
-        overviewModal.querySelector(".close-navlogo").addEventListener("click", () => closeNavLogoOverviewModal());
         overviewModal.addEventListener("click", e => {
             if (e.target === overviewModal) closeNavLogoOverviewModal();
         });
     }
 
+    // Always update the content dynamically
+    const logoText = document.getElementById("navLogo")?.textContent.trim() || "Gallery";
+    overviewModal.innerHTML = `
+        <div class="overview-header">
+            <h2>${logoText}</h2>
+            <button class="close-navlogo">×</button>
+        </div>
+        <div class="overview-body footer-like">
+            <section class="footer-block">
+                <div class="navlogo-intro" style="margin-bottom:1.5rem; text-align:center; color:#ccc;">
+                    <h3 style="margin-bottom:0.5rem;">${introHeading}</h3>
+                    <p style="font-size:0.95rem; max-width:600px; margin:0 auto;">
+                        ${introText}
+                    </p>
+                </div>
+                <div id="navlogo-gallery-container"></div>
+                <div class="pagination" id="navlogo-gallery-pagination"></div>
+                <div class="navlogo-outro" style="margin-top:1.5rem; text-align:center; color:#ccc;">
+                    <h3 style="margin-bottom:0.5rem;">${outroHeading}</h3>
+                    <p style="font-size:0.95rem; max-width:600px; margin:0 auto;">
+                        ${outroText}
+                    </p>
+                </div>
+            </section>
+        </div>
+    `;
+
+    // Re-attach close button listener
+    overviewModal.querySelector(".close-navlogo").addEventListener("click", () => closeNavLogoOverviewModal());
+
     renderNavLogoGalleryPage(navLogoCurrentPage);
     overviewModal.classList.add("show");
     document.body.style.overflow = "hidden";
 }
+
 
 
 // ---------- Render NavLogo Gallery Table from galleryData ----------
