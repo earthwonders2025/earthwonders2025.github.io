@@ -1008,14 +1008,13 @@ async function openNavLogoOverviewModal(skipHistory = false) {
         history.pushState({ gallery: navLogoSlug }, "", newUrl);
     }
 
-    // Fetch SiteSetting
+    // ✅ Use full API URL with CORS
     let siteSetting = null;
     try {
-        const res = await fetch("/api/site-settings/");
+        const res = await fetch("https://earthwonders2025.pythonanywhere.com/api/settings/", { mode: "cors" });
+        if (!res.ok) throw new Error(`Site settings API failed: ${res.status}`);
         const data = await res.json();
-        if (data.length > 0) {
-            siteSetting = data[0];
-        }
+        if (data.length > 0) siteSetting = data[0];
     } catch (err) {
         console.error("Error fetching SiteSetting:", err);
     }
@@ -1051,23 +1050,18 @@ async function openNavLogoOverviewModal(skipHistory = false) {
         </div>
     `;
 
-    // Append modal if it was newly created
     if (!document.getElementById("overview-modal-navlogo")) {
         document.body.appendChild(overviewModal);
     }
 
-    // Attach close button listener
     overviewModal.querySelector(".close-navlogo").addEventListener("click", () => closeNavLogoOverviewModal());
-
-    // Close on click outside
-    overviewModal.addEventListener("click", e => {
-        if (e.target === overviewModal) closeNavLogoOverviewModal();
-    });
+    overviewModal.addEventListener("click", e => { if (e.target === overviewModal) closeNavLogoOverviewModal(); });
 
     renderNavLogoGalleryPage(navLogoCurrentPage);
     overviewModal.classList.add("show");
     document.body.style.overflow = "hidden";
 }
+
 
 // ---------- Render NavLogo Gallery Table from galleryData ----------
 function renderNavLogoGalleryPage(page = 1) {
