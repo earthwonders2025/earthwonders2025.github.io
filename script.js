@@ -993,98 +993,109 @@ let navLogoCurrentPage = 1;
 const navLogoItemsPerPage = 5;
 
 async function openNavLogoOverviewModal(skipHistory = false) {
-    if (openModals === 0) saveScrollPosition();
-    openModals++;
-    currentGalleryInNavLogo = null;
+  if (openModals === 0) saveScrollPosition();
+  openModals++;
+  currentGalleryInNavLogo = null;
 
-    const baseUrl = `${window.location.origin}${window.location.pathname}`;
-    const navLogoSlug = "navlogo";
-    const newUrl = `${baseUrl}?gallery=${navLogoSlug}`;
+  const baseUrl = `${window.location.origin}${window.location.pathname}`;
+  const navLogoSlug = "navlogo";
+  const newUrl = `${baseUrl}?gallery=${navLogoSlug}`;
 
-    if (!skipHistory) {
-        history.pushState({ gallery: navLogoSlug }, "", newUrl);
-    } else {
-        history.replaceState({}, "", baseUrl);
-        history.pushState({ gallery: navLogoSlug }, "", newUrl);
+  if (!skipHistory) {
+    history.pushState({ gallery: navLogoSlug }, "", newUrl);
+  } else {
+    history.replaceState({}, "", baseUrl);
+    history.pushState({ gallery: navLogoSlug }, "", newUrl);
+  }
+
+  // -----------------------------
+  // 🟢 Fetch SiteSetting safely
+  // -----------------------------
+  let siteSetting = null;
+  try {
+    const res = await fetch("https://earthwonders2025.pythonanywhere.com/api/settings/", { mode: "cors" });
+    const data = await res.json();
+    if (Array.isArray(data) && data.length > 0) {
+      siteSetting = data[0];
     }
+    console.log("✅ SiteSetting fetched:", siteSetting);
+  } catch (err) {
+    console.warn("⚠️ Failed to fetch SiteSetting:", err);
+  }
 
-    // ---------- FETCH SITE SETTINGS ----------
-    let siteSetting = {
-        navlogo_intro_heading: "",
-        navlogo_intro_text: "",
-        navlogo_outro_heading: "",
-        navlogo_outro_text: "",
-    };
-    try {
-        const res = await fetch("https://earthwonders2025.pythonanywhere.com/api/settings/", { mode: "cors" });
-        const data = await res.json();
-        if (data.length > 0) siteSetting = data[0];
-        console.log("SiteSetting:", siteSetting);
-    } catch (err) {
-        console.error("Error fetching SiteSetting:", err);
-    }
+  // -----------------------------
+  // 🧩 Fallback values (never undefined)
+  // -----------------------------
+  const introHeading = siteSetting?.navlogo_intro_heading?.trim() || "Explore Our Galleries";
+  const introText = siteSetting?.navlogo_intro_text?.trim() || 
+    "Discover stunning photography and videos from all around the world. Click any gallery below to view details, images, and videos.";
+  const outroHeading = siteSetting?.navlogo_outro_heading?.trim() || "Stay Inspired";
+  const outroText = siteSetting?.navlogo_outro_text?.trim() || 
+    "Keep exploring and enjoy the beauty of our curated galleries. Every collection tells a story of the Earth’s wonders.";
 
-    // ---------- FETCH GALLERIES IF NOT LOADED ----------
-    if (!galleryData.length) {
-        try {
-            const res = await fetch("https://earthwonders2025.pythonanywhere.com/api/galleries/", { mode: "cors" });
-            galleryData = await res.json();
-        } catch (err) {
-            console.error("Error fetching galleries:", err);
-        }
-    }
+  const logoText = document.getElementById("navLogo")?.textContent.trim() || siteSetting?.nav_logo_text || "Gallery";
 
-    // ---------- CREATE MODAL ----------
-    let overviewModal = document.getElementById("overview-modal-navlogo");
-    if (!overviewModal) {
-        overviewModal = document.createElement("div");
-        overviewModal.id = "overview-modal-navlogo";
-        overviewModal.className = "overview-modal";
-        document.body.appendChild(overviewModal);
-    }
-
-    const logoText = document.getElementById("navLogo")?.textContent.trim() || "Gallery";
+  // -----------------------------
+  // 🏗️ Build modal HTML
+  // -----------------------------
+  let overviewModal = document.getElementById("overview-modal-navlogo");
+  if (!overviewModal) {
+    overviewModal = document.createElement("div");
+    overviewModal.id = "overview-modal-navlogo";
+    overviewModal.className = "overview-modal";
 
     overviewModal.innerHTML = `
-        <div class="overview-header">
-            <h2>${logoText}</h2>
-            <button class="close-navlogo">×</button>
-        </div>
-        <div class="overview-body footer-like">
-            <section class="footer-block">
-                <div class="navlogo-intro" style="margin-bottom:1.5rem; text-align:center; color:#ccc;">
-                    <h3 style="margin-bottom:0.5rem;">${siteSetting.navlogo_intro_heading}</h3>
-                    <p style="font-size:0.95rem; max-width:600px; margin:0 auto;">
-                        ${siteSetting.navlogo_intro_text}
-                    </p>
-                </div>
-                <div id="navlogo-gallery-container"></div>
-                <div class="pagination" id="navlogo-gallery-pagination"></div>
-                <div class="navlogo-outro" style="margin-top:1.5rem; text-align:center; color:#ccc;">
-                    <h3 style="margin-bottom:0.5rem;">${siteSetting.navlogo_outro_heading}</h3>
-                    <p style="font-size:0.95rem; max-width:600px; margin:0 auto;">
-                        ${siteSetting.navlogo_outro_text}
-                    </p>
-                </div>
-            </section>
-        </div>
+      <div class="overview-header">
+        <h2>${logoText}</h2>
+        <button class="close-navlogo">×</button>
+      </div>
+      <div class="overview-body footer-like">
+        <section class="footer-block">
+          <!-- Intro -->
+          <div class="navlogo-intro" style="margin-bottom:1.5rem; text-align:center; color:#ccc;">
+            <h3 style="margin-bottom:0.5rem;">${introHeading}</h3>
+            <p style="font-size:0.95rem; max-width:600px; margin:0 auto;">
+              ${introText}
+            </p>
+          </div>
+
+          <!-- Gallery Grid -->
+          <div id="navlogo-gallery-container"></div>
+          <div class="pagination" id="navlogo-gallery-pagination"></div>
+
+          <!-- Outro -->
+          <div class="navlogo-outro" style="margin-top:1.5rem; text-align:center; color:#ccc;">
+            <h3 style="margin-bottom:0.5rem;">${outroHeading}</h3>
+            <p style="font-size:0.95rem; max-width:600px; margin:0 auto;">
+              ${outroText}
+            </p>
+          </div>
+        </section>
+      </div>
     `;
 
-    // Close button
-    overviewModal.querySelector(".close-navlogo").addEventListener("click", closeNavLogoOverviewModal);
+    document.body.appendChild(overviewModal);
 
-    // Click outside to close
-    overviewModal.addEventListener("click", (e) => {
-        if (e.target === overviewModal) closeNavLogoOverviewModal();
+    // Close events
+    overviewModal.querySelector(".close-navlogo").addEventListener("click", () => closeNavLogoOverviewModal());
+    overviewModal.addEventListener("click", e => {
+      if (e.target === overviewModal) closeNavLogoOverviewModal();
     });
+  }
 
-    // Render first page
+  // -----------------------------
+  // 🖼️ Render galleries inside modal
+  // -----------------------------
+  try {
     renderNavLogoGalleryPage(navLogoCurrentPage);
+  } catch (err) {
+    console.error("⚠️ Failed to render galleries:", err);
+  }
 
-    // Show modal
-    overviewModal.classList.add("show");
-    document.body.style.overflow = "hidden";
+  overviewModal.classList.add("show");
+  document.body.style.overflow = "hidden";
 }
+
 
 // ---------- RENDER NAVLOGO GALLERY ----------
 function renderNavLogoGalleryPage(page = 1) {
