@@ -993,104 +993,81 @@ let navLogoCurrentPage = 1;
 const navLogoItemsPerPage = 5;
 
 async function openNavLogoOverviewModal(skipHistory = false) {
-  if (openModals === 0) saveScrollPosition();
-  openModals++;
-  currentGalleryInNavLogo = null;
-
-  const baseUrl = `${window.location.origin}${window.location.pathname}`;
-  const navLogoSlug = "navlogo";
-  const newUrl = `${baseUrl}?gallery=${navLogoSlug}`;
-
-  if (!skipHistory) {
-    history.pushState({ gallery: navLogoSlug }, "", newUrl);
-  } else {
-    history.replaceState({}, "", baseUrl);
-    history.pushState({ gallery: navLogoSlug }, "", newUrl);
-  }
-
-  // 🟢 1️⃣ Fetch SiteSetting data dynamically and safely
-  let siteSetting = null;
   try {
-    const res = await fetch("https://earthwonders2025.pythonanywhere.com/api/settings/", {
-      mode: "cors",
-    });
+    // Fetch settings from your Django API
+    const res = await fetch("https://earthwonders2025.pythonanywhere.com/api/settings/");
     const data = await res.json();
-    console.log("✅ SiteSetting data fetched:", data);
-    if (Array.isArray(data) && data.length > 0) {
-      siteSetting = data[0];
+    const settings = data[0] || {};
+
+    // Extract safely
+    const logoText = settings.nav_logo_text || "Gallery";
+    const introHeading = settings.navlogo_intro_heading || "";
+    const introText = settings.navlogo_intro_text || "";
+    const outroHeading = settings.navlogo_outro_heading || "";
+    const outroText = settings.navlogo_outro_text || "";
+
+    // Handle URL/history
+    const baseUrl = `${window.location.origin}${window.location.pathname}`;
+    const navLogoSlug = "navlogo";
+    const newUrl = `${baseUrl}?gallery=${navLogoSlug}`;
+
+    if (!skipHistory) {
+      history.pushState({ gallery: navLogoSlug }, "", newUrl);
     } else {
-      console.warn("⚠️ No SiteSetting data found — using fallback text");
+      history.replaceState({}, "", baseUrl);
+      history.pushState({ gallery: navLogoSlug }, "", newUrl);
     }
-  } catch (err) {
-    console.error("❌ Failed to fetch SiteSetting:", err);
-  }
 
-  // 🧩 2️⃣ Safe fallback values (never undefined)
-  const introHeading = siteSetting?.navlogo_intro_heading?.trim() || "Explore Our Galleries";
-  const introText =
-    siteSetting?.navlogo_intro_text?.trim() ||
-    "Discover stunning photography and videos from all around the world. Click any gallery below to view details, images, and videos.";
-  const outroHeading = siteSetting?.navlogo_outro_heading?.trim() || "Stay Inspired";
-  const outroText =
-    siteSetting?.navlogo_outro_text?.trim() ||
-    "Keep exploring and enjoy the beauty of our curated galleries. Every collection tells a story of the Earth’s wonders.";
-  const logoText =
-    document.getElementById("navLogo")?.textContent.trim() ||
-    siteSetting?.nav_logo_text ||
-    "Gallery";
+    // Create modal if not already present
+    let overviewModal = document.getElementById("overview-modal-navlogo");
+    if (!overviewModal) {
+      overviewModal = document.createElement("div");
+      overviewModal.id = "overview-modal-navlogo";
+      overviewModal.className = "overview-modal";
 
-  // 🏗️ 3️⃣ Build the modal AFTER data is ready
-  let overviewModal = document.getElementById("overview-modal-navlogo");
-  if (!overviewModal) {
-    overviewModal = document.createElement("div");
-    overviewModal.id = "overview-modal-navlogo";
-    overviewModal.className = "overview-modal";
+      overviewModal.innerHTML = `
+        <div class="overview-header">
+          <h2>${logoText}</h2>
+          <button class="close-navlogo">×</button>
+        </div>
+        <div class="overview-body footer-like">
+          <section class="footer-block">
+            <!-- Intro Section -->
+            <div class="navlogo-intro" style="margin-bottom:1.5rem; text-align:center; color:#ccc;">
+              ${introHeading ? `<h3>${introHeading}</h3>` : ""}
+              ${introText ? `<p style="max-width:600px; margin:0 auto;">${introText}</p>` : ""}
+            </div>
 
-    overviewModal.innerHTML = `
-      <div class="overview-header">
-        <h2>${logoText}</h2>
-        <button class="close-navlogo">×</button>
-      </div>
-      <div class="overview-body footer-like">
-        <section class="footer-block">
-          <!-- Intro -->
-          <div class="navlogo-intro" style="margin-bottom:1.5rem; text-align:center; color:#ccc;">
-            <h3 style="margin-bottom:0.5rem;">${introHeading}</h3>
-            <p style="font-size:0.95rem; max-width:600px; margin:0 auto;">${introText}</p>
-          </div>
+            <!-- Gallery Grid -->
+            <div id="navlogo-gallery-container"></div>
+            <div class="pagination" id="navlogo-gallery-pagination"></div>
 
-          <!-- Gallery Grid -->
-          <div id="navlogo-gallery-container"></div>
-          <div class="pagination" id="navlogo-gallery-pagination"></div>
+            <!-- Outro Section -->
+            <div class="navlogo-outro" style="margin-top:1.5rem; text-align:center; color:#ccc;">
+              ${outroHeading ? `<h3>${outroHeading}</h3>` : ""}
+              ${outroText ? `<p style="max-width:600px; margin:0 auto;">${outroText}</p>` : ""}
+            </div>
+          </section>
+        </div>
+      `;
 
-          <!-- Outro -->
-          <div class="navlogo-outro" style="margin-top:1.5rem; text-align:center; color:#ccc;">
-            <h3 style="margin-bottom:0.5rem;">${outroHeading}</h3>
-            <p style="font-size:0.95rem; max-width:600px; margin:0 auto;">${outroText}</p>
-          </div>
-        </section>
-      </div>
-    `;
+      document.body.appendChild(overviewModal);
 
-    document.body.appendChild(overviewModal);
+      // Close modal handlers
+      overviewModal.querySelector(".close-navlogo").addEventListener("click", () => closeNavLogoOverviewModal());
+      overviewModal.addEventListener("click", e => {
+        if (e.target === overviewModal) closeNavLogoOverviewModal();
+      });
+    }
 
-    // 🧭 Close modal logic
-    overviewModal.querySelector(".close-navlogo").addEventListener("click", () => closeNavLogoOverviewModal());
-    overviewModal.addEventListener("click", e => {
-      if (e.target === overviewModal) closeNavLogoOverviewModal();
-    });
-  }
-
-  // 🖼️ 4️⃣ Render gallery content
-  try {
     renderNavLogoGalleryPage(navLogoCurrentPage);
+    overviewModal.classList.add("show");
+    document.body.style.overflow = "hidden";
   } catch (err) {
-    console.error("⚠️ Failed to render galleries:", err);
+    console.error("Failed to load site settings:", err);
   }
-
-  overviewModal.classList.add("show");
-  document.body.style.overflow = "hidden";
 }
+
 
 // ---------- RENDER NAVLOGO GALLERY ----------
 function renderNavLogoGalleryPage(page = 1) {
