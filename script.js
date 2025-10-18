@@ -1008,36 +1008,38 @@ async function openNavLogoOverviewModal(skipHistory = false) {
     history.pushState({ gallery: navLogoSlug }, "", newUrl);
   }
 
-  // -----------------------------
-  // 🟢 Fetch SiteSetting safely
-  // -----------------------------
+  // 🟢 1️⃣ Fetch SiteSetting data dynamically and safely
   let siteSetting = null;
   try {
-    const res = await fetch("https://earthwonders2025.pythonanywhere.com/api/settings/", { mode: "cors" });
+    const res = await fetch("https://earthwonders2025.pythonanywhere.com/api/settings/", {
+      mode: "cors",
+    });
     const data = await res.json();
+    console.log("✅ SiteSetting data fetched:", data);
     if (Array.isArray(data) && data.length > 0) {
       siteSetting = data[0];
+    } else {
+      console.warn("⚠️ No SiteSetting data found — using fallback text");
     }
-    console.log("✅ SiteSetting fetched:", siteSetting);
   } catch (err) {
-    console.warn("⚠️ Failed to fetch SiteSetting:", err);
+    console.error("❌ Failed to fetch SiteSetting:", err);
   }
 
-  // -----------------------------
-  // 🧩 Fallback values (never undefined)
-  // -----------------------------
+  // 🧩 2️⃣ Safe fallback values (never undefined)
   const introHeading = siteSetting?.navlogo_intro_heading?.trim() || "Explore Our Galleries";
-  const introText = siteSetting?.navlogo_intro_text?.trim() || 
+  const introText =
+    siteSetting?.navlogo_intro_text?.trim() ||
     "Discover stunning photography and videos from all around the world. Click any gallery below to view details, images, and videos.";
   const outroHeading = siteSetting?.navlogo_outro_heading?.trim() || "Stay Inspired";
-  const outroText = siteSetting?.navlogo_outro_text?.trim() || 
+  const outroText =
+    siteSetting?.navlogo_outro_text?.trim() ||
     "Keep exploring and enjoy the beauty of our curated galleries. Every collection tells a story of the Earth’s wonders.";
+  const logoText =
+    document.getElementById("navLogo")?.textContent.trim() ||
+    siteSetting?.nav_logo_text ||
+    "Gallery";
 
-  const logoText = document.getElementById("navLogo")?.textContent.trim() || siteSetting?.nav_logo_text || "Gallery";
-
-  // -----------------------------
-  // 🏗️ Build modal HTML
-  // -----------------------------
+  // 🏗️ 3️⃣ Build the modal AFTER data is ready
   let overviewModal = document.getElementById("overview-modal-navlogo");
   if (!overviewModal) {
     overviewModal = document.createElement("div");
@@ -1054,9 +1056,7 @@ async function openNavLogoOverviewModal(skipHistory = false) {
           <!-- Intro -->
           <div class="navlogo-intro" style="margin-bottom:1.5rem; text-align:center; color:#ccc;">
             <h3 style="margin-bottom:0.5rem;">${introHeading}</h3>
-            <p style="font-size:0.95rem; max-width:600px; margin:0 auto;">
-              ${introText}
-            </p>
+            <p style="font-size:0.95rem; max-width:600px; margin:0 auto;">${introText}</p>
           </div>
 
           <!-- Gallery Grid -->
@@ -1066,9 +1066,7 @@ async function openNavLogoOverviewModal(skipHistory = false) {
           <!-- Outro -->
           <div class="navlogo-outro" style="margin-top:1.5rem; text-align:center; color:#ccc;">
             <h3 style="margin-bottom:0.5rem;">${outroHeading}</h3>
-            <p style="font-size:0.95rem; max-width:600px; margin:0 auto;">
-              ${outroText}
-            </p>
+            <p style="font-size:0.95rem; max-width:600px; margin:0 auto;">${outroText}</p>
           </div>
         </section>
       </div>
@@ -1076,16 +1074,14 @@ async function openNavLogoOverviewModal(skipHistory = false) {
 
     document.body.appendChild(overviewModal);
 
-    // Close events
+    // 🧭 Close modal logic
     overviewModal.querySelector(".close-navlogo").addEventListener("click", () => closeNavLogoOverviewModal());
     overviewModal.addEventListener("click", e => {
       if (e.target === overviewModal) closeNavLogoOverviewModal();
     });
   }
 
-  // -----------------------------
-  // 🖼️ Render galleries inside modal
-  // -----------------------------
+  // 🖼️ 4️⃣ Render gallery content
   try {
     renderNavLogoGalleryPage(navLogoCurrentPage);
   } catch (err) {
@@ -1095,7 +1091,6 @@ async function openNavLogoOverviewModal(skipHistory = false) {
   overviewModal.classList.add("show");
   document.body.style.overflow = "hidden";
 }
-
 
 // ---------- RENDER NAVLOGO GALLERY ----------
 function renderNavLogoGalleryPage(page = 1) {
