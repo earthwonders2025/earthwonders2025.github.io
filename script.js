@@ -1008,43 +1008,24 @@ async function openNavLogoOverviewModal(skipHistory = false) {
         history.pushState({ gallery: navLogoSlug }, "", newUrl);
     }
 
-    // Fetch SiteSetting data
-    let introHeading = "";
-    let introText = "";
-    let outroHeading = "";
-    let outroText = "";
-
+    // Fetch SiteSetting
+    let siteSetting = null;
     try {
-        const response = await fetch("/api/site-settings/");
-        const data = await response.json();
+        const res = await fetch("/api/site-settings/");
+        const data = await res.json();
         if (data.length > 0) {
-            const siteSetting = data[0];
-            introHeading = siteSetting.navlogo_intro_heading || "";
-            introText = siteSetting.navlogo_intro_text || "";
-            outroHeading = siteSetting.navlogo_outro_heading || "";
-            outroText = siteSetting.navlogo_outro_text || "";
+            siteSetting = data[0];
         }
     } catch (err) {
-        console.error("Failed to fetch site settings:", err);
+        console.error("Error fetching SiteSetting:", err);
     }
 
-    let overviewModal = document.getElementById("overview-modal-navlogo");
+    const overviewModal = document.getElementById("overview-modal-navlogo") || document.createElement("div");
+    overviewModal.id = "overview-modal-navlogo";
+    overviewModal.className = "overview-modal";
 
-    // Create modal if it doesn't exist
-    if (!overviewModal) {
-        overviewModal = document.createElement("div");
-        overviewModal.id = "overview-modal-navlogo";
-        overviewModal.className = "overview-modal";
-        document.body.appendChild(overviewModal);
-
-        // Close NavLogo modal
-        overviewModal.addEventListener("click", e => {
-            if (e.target === overviewModal) closeNavLogoOverviewModal();
-        });
-    }
-
-    // Always update the content dynamically
     const logoText = document.getElementById("navLogo")?.textContent.trim() || "Gallery";
+
     overviewModal.innerHTML = `
         <div class="overview-header">
             <h2>${logoText}</h2>
@@ -1053,32 +1034,40 @@ async function openNavLogoOverviewModal(skipHistory = false) {
         <div class="overview-body footer-like">
             <section class="footer-block">
                 <div class="navlogo-intro" style="margin-bottom:1.5rem; text-align:center; color:#ccc;">
-                    <h3 style="margin-bottom:0.5rem;">${introHeading}</h3>
+                    <h3 style="margin-bottom:0.5rem;">${siteSetting?.navlogo_intro_heading || ""}</h3>
                     <p style="font-size:0.95rem; max-width:600px; margin:0 auto;">
-                        ${introText}
+                        ${siteSetting?.navlogo_intro_text || ""}
                     </p>
                 </div>
                 <div id="navlogo-gallery-container"></div>
                 <div class="pagination" id="navlogo-gallery-pagination"></div>
                 <div class="navlogo-outro" style="margin-top:1.5rem; text-align:center; color:#ccc;">
-                    <h3 style="margin-bottom:0.5rem;">${outroHeading}</h3>
+                    <h3 style="margin-bottom:0.5rem;">${siteSetting?.navlogo_outro_heading || ""}</h3>
                     <p style="font-size:0.95rem; max-width:600px; margin:0 auto;">
-                        ${outroText}
+                        ${siteSetting?.navlogo_outro_text || ""}
                     </p>
                 </div>
             </section>
         </div>
     `;
 
-    // Re-attach close button listener
+    // Append modal if it was newly created
+    if (!document.getElementById("overview-modal-navlogo")) {
+        document.body.appendChild(overviewModal);
+    }
+
+    // Attach close button listener
     overviewModal.querySelector(".close-navlogo").addEventListener("click", () => closeNavLogoOverviewModal());
+
+    // Close on click outside
+    overviewModal.addEventListener("click", e => {
+        if (e.target === overviewModal) closeNavLogoOverviewModal();
+    });
 
     renderNavLogoGalleryPage(navLogoCurrentPage);
     overviewModal.classList.add("show");
     document.body.style.overflow = "hidden";
 }
-
-
 
 // ---------- Render NavLogo Gallery Table from galleryData ----------
 function renderNavLogoGalleryPage(page = 1) {
