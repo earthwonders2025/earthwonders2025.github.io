@@ -1035,7 +1035,7 @@ async function openNavLogoOverviewModal(skipHistory = false) {
             <!-- Intro Section -->
             <div class="navlogo-intro" style="margin-bottom:1.5rem; text-align:center; color:#ccc;">
               ${introHeading ? `<h3>${introHeading}</h3>` : ""}
-              ${introText ? `<p style="max-width:600px; margin:0 auto;">${introText}</p>` : ""}
+              ${introText ? `<p style="margin:0 auto;">${introText}</p>` : ""}
             </div>
 
             <!-- Gallery Grid -->
@@ -1045,7 +1045,7 @@ async function openNavLogoOverviewModal(skipHistory = false) {
             <!-- Outro Section -->
             <div class="navlogo-outro" style="margin-top:1.5rem; text-align:center; color:#ccc;">
               ${outroHeading ? `<h3>${outroHeading}</h3>` : ""}
-              ${outroText ? `<p style="max-width:600px; margin:0 auto;">${outroText}</p>` : ""}
+              ${outroText ? `<p style="margin:0 auto;">${outroText}</p>` : ""}
             </div>
           </section>
         </div>
