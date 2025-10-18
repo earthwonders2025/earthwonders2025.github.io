@@ -1008,20 +1008,40 @@ async function openNavLogoOverviewModal(skipHistory = false) {
         history.pushState({ gallery: navLogoSlug }, "", newUrl);
     }
 
-    // ✅ Use full API URL with CORS
-    let siteSetting = null;
+    // ---------- FETCH SITE SETTINGS ----------
+    let siteSetting = {
+        navlogo_intro_heading: "",
+        navlogo_intro_text: "",
+        navlogo_outro_heading: "",
+        navlogo_outro_text: "",
+    };
     try {
         const res = await fetch("https://earthwonders2025.pythonanywhere.com/api/settings/", { mode: "cors" });
-        if (!res.ok) throw new Error(`Site settings API failed: ${res.status}`);
         const data = await res.json();
         if (data.length > 0) siteSetting = data[0];
+        console.log("SiteSetting:", siteSetting);
     } catch (err) {
         console.error("Error fetching SiteSetting:", err);
     }
 
-    const overviewModal = document.getElementById("overview-modal-navlogo") || document.createElement("div");
-    overviewModal.id = "overview-modal-navlogo";
-    overviewModal.className = "overview-modal";
+    // ---------- FETCH GALLERIES IF NOT LOADED ----------
+    if (!galleryData.length) {
+        try {
+            const res = await fetch("https://earthwonders2025.pythonanywhere.com/api/galleries/", { mode: "cors" });
+            galleryData = await res.json();
+        } catch (err) {
+            console.error("Error fetching galleries:", err);
+        }
+    }
+
+    // ---------- CREATE MODAL ----------
+    let overviewModal = document.getElementById("overview-modal-navlogo");
+    if (!overviewModal) {
+        overviewModal = document.createElement("div");
+        overviewModal.id = "overview-modal-navlogo";
+        overviewModal.className = "overview-modal";
+        document.body.appendChild(overviewModal);
+    }
 
     const logoText = document.getElementById("navLogo")?.textContent.trim() || "Gallery";
 
@@ -1033,37 +1053,40 @@ async function openNavLogoOverviewModal(skipHistory = false) {
         <div class="overview-body footer-like">
             <section class="footer-block">
                 <div class="navlogo-intro" style="margin-bottom:1.5rem; text-align:center; color:#ccc;">
-                    <h3 style="margin-bottom:0.5rem;">${siteSetting?.navlogo_intro_heading || ""}</h3>
+                    <h3 style="margin-bottom:0.5rem;">${siteSetting.navlogo_intro_heading}</h3>
                     <p style="font-size:0.95rem; max-width:600px; margin:0 auto;">
-                        ${siteSetting?.navlogo_intro_text || ""}
+                        ${siteSetting.navlogo_intro_text}
                     </p>
                 </div>
                 <div id="navlogo-gallery-container"></div>
                 <div class="pagination" id="navlogo-gallery-pagination"></div>
                 <div class="navlogo-outro" style="margin-top:1.5rem; text-align:center; color:#ccc;">
-                    <h3 style="margin-bottom:0.5rem;">${siteSetting?.navlogo_outro_heading || ""}</h3>
+                    <h3 style="margin-bottom:0.5rem;">${siteSetting.navlogo_outro_heading}</h3>
                     <p style="font-size:0.95rem; max-width:600px; margin:0 auto;">
-                        ${siteSetting?.navlogo_outro_text || ""}
+                        ${siteSetting.navlogo_outro_text}
                     </p>
                 </div>
             </section>
         </div>
     `;
 
-    if (!document.getElementById("overview-modal-navlogo")) {
-        document.body.appendChild(overviewModal);
-    }
+    // Close button
+    overviewModal.querySelector(".close-navlogo").addEventListener("click", closeNavLogoOverviewModal);
 
-    overviewModal.querySelector(".close-navlogo").addEventListener("click", () => closeNavLogoOverviewModal());
-    overviewModal.addEventListener("click", e => { if (e.target === overviewModal) closeNavLogoOverviewModal(); });
+    // Click outside to close
+    overviewModal.addEventListener("click", (e) => {
+        if (e.target === overviewModal) closeNavLogoOverviewModal();
+    });
 
+    // Render first page
     renderNavLogoGalleryPage(navLogoCurrentPage);
+
+    // Show modal
     overviewModal.classList.add("show");
     document.body.style.overflow = "hidden";
 }
 
-
-// ---------- Render NavLogo Gallery Table from galleryData ----------
+// ---------- RENDER NAVLOGO GALLERY ----------
 function renderNavLogoGalleryPage(page = 1) {
     const container = document.getElementById("navlogo-gallery-container");
     const paginationContainer = document.getElementById("navlogo-gallery-pagination");
@@ -1076,25 +1099,23 @@ function renderNavLogoGalleryPage(page = 1) {
     let html = '<div class="gallery-table" style="display:grid;gap:1rem;grid-template-columns:repeat(auto-fill,minmax(200px,1fr))">';
     pageItems.forEach(item => {
         const image = item.images?.[0]?.image_url || item.main_image_url || '';
-        if (!image) return; // skip if no image
+        if (!image) return;
 
-        const shortDesc = item.subtitle || '';
         html += `
             <div class="gallery-item" style="border:1px solid #333;border-radius:8px;overflow:hidden;">
                 <img src="${image}" alt="${item.nav_title}" style="width:100%;height:150px;object-fit:cover;" />
                 <div class="gallery-info" style="padding:0.5rem;">
                     <strong>${item.nav_title}</strong>
-                    <p style="font-size:0.9rem;color:#ccc;">${shortDesc}</p>
+                    <p style="font-size:0.9rem;color:#ccc;">${item.subtitle || ''}</p>
                     <button style="margin-top:5px;padding:0.3rem 0.5rem;cursor:pointer;" onclick="openGalleryFromNavLogo(${item.id})">View</button>
                 </div>
             </div>
         `;
     });
-    html += '</div>';
-
+    html += "</div>";
     container.innerHTML = html;
 
-    // Pagination
+    // Pagination buttons
     const totalPages = Math.ceil(galleryData.length / navLogoItemsPerPage);
     let paginationHTML = '';
     for (let i = 1; i <= totalPages; i++) {
@@ -1103,39 +1124,30 @@ function renderNavLogoGalleryPage(page = 1) {
     paginationContainer.innerHTML = paginationHTML;
 }
 
-
 function changeNavLogoPage(page) {
     navLogoCurrentPage = page;
     renderNavLogoGalleryPage(page);
 }
 
-// ---------- Open gallery from NavLogo ----------
 function openGalleryFromNavLogo(productId) {
-    currentGalleryInNavLogo = productId; // track open gallery
-    const baseUrl = `${window.location.origin}${window.location.pathname}`;
-    const navLogoModal = document.getElementById("overview-modal-navlogo");
+    currentGalleryInNavLogo = productId;
+    openOverviewModal(productId);
 
-    openOverviewModal(productId); // normal gallery modal
-
-    // Hook close specifically for this gallery modal
     const galleryModal = document.getElementById(`overview-modal-${productId}`);
+    const navLogoModal = document.getElementById("overview-modal-navlogo");
     if (!galleryModal) return;
 
     const closeBtn = galleryModal.querySelector(".close-overview");
-    const originalClose = closeBtn.onclick;
     closeBtn.onclick = function () {
         closeOverviewModal(galleryModal);
         currentGalleryInNavLogo = null;
-
-        // Restore NavLogo URL and keep modal open
         if (navLogoModal) {
-            history.replaceState({ gallery: "navlogo" }, "", `${baseUrl}?gallery=navlogo`);
-            document.body.style.overflow = "hidden"; // keep body scroll hidden
+            history.replaceState({ gallery: "navlogo" }, "", `${window.location.origin}${window.location.pathname}?gallery=navlogo`);
+            document.body.style.overflow = "hidden";
         }
     };
 }
 
-// ---------- Close NavLogo ----------
 function closeNavLogoOverviewModal() {
     const navLogoModal = document.getElementById("overview-modal-navlogo");
     if (!navLogoModal) return;
@@ -1148,11 +1160,7 @@ function closeNavLogoOverviewModal() {
         restoreScrollPosition();
     }
 
-    const baseUrl = `${window.location.origin}${window.location.pathname}`;
-
-    if (!currentGalleryInNavLogo) {
-        history.replaceState({}, "", baseUrl);
-    }
+    history.replaceState({}, "", `${window.location.origin}${window.location.pathname}`);
 }
     // 
     // 
