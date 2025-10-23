@@ -1,5 +1,6 @@
 # earthwonders2025.github.io
 https://earthwonders2025.github.io/
 
-How EarthWonders 2025 Works
+How EarthWonders 2025 Works.
+
 EarthWonders 2025 is built to be completely dynamic, everything you see is powered by real data from the backend. When you open the website, the frontend (built with HTML, CSS, and JavaScript) automatically connects to a Django REST Framework (DRF) API. This API provides all galleries, images, videos, navigation items, and footer content in real time as JSON data. The very first gallery returned by the API becomes the featured one, shown in a large hero section with smooth parallax effects. All other galleries load below it, sorted so the newest appears first. Clicking any gallery or the main navigation logo opens a dynamic modal that displays detailed descriptions, image grids, and embedded videos all fetched instantly from the API without reloading the page. The site behaves like a Single Page Application (SPA), meaning navigation, animations, and modals are handled entirely by JavaScript. This makes everything fast, seamless, and interactive even on mobile devices. Because all content comes from the Django backend, any update made by the admin (like adding new galleries or changing footer text) appears on the live site instantly no frontend edits needed. This makes EarthWonders 2025 a fully automated, data-driven, and easily maintainable platform for visual exploration and learning.
